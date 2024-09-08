@@ -1,0 +1,35 @@
+{
+  "name": "wentsketchy",
+  "version": "1.0.0",
+  "private": "true",
+  "scripts": {
+    "build": "bun run cli:build",
+    "clean": "go clean",
+    "cli:build": "go build -o ./bin/cli ./cmd/cli/main.go",
+    "cli:dev": "go run cmd/cli/main.go",
+    "format": "gofmt -l .",
+    "format:fix": "gofmt -w",
+    "postinstall": "/bin/sh -c ./postinstall.sh",
+    "lint": "golangci-lint run",
+    "lint:fix": "golangci-lint run --fix",
+    "ls:lint": "ls-lint",
+    "precommit": "lint-staged",
+    "prepare": "husky",
+    "prepush": "bun run format && bun run lint && bun run ls:lint && bun run build && bun run test:unit && bun run test:integration",
+    "test:coverage": "go test ./... -coverprofile=coverage.out",
+    "test:integration": "go test -v -run Integration ./...",
+    "test:integration:pretty": "go test -v -json -run Integration ./... | gotestfmt",
+    "test:unit": "go test -v -run Unit ./...",
+    "test:unit:pretty": "go test -v -json -run Unit ./... | gotestfmt",
+    "vet": "go vet"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@ls-lint/ls-lint": "^2.2.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5",
+    "sort-package-json": "^2.10.0"
+  }
+}

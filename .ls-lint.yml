@@ -1,0 +1,13 @@
+---
+ls:
+  .dir: kebab-case
+  .go: snake_case
+ignore:
+  - .idea
+  - .git
+  - .husky
+  - arch/.structurizr
+  - openapi
+  - bin
+  - node_modules
+  - coverage

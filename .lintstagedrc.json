@@ -1,0 +1,5 @@
+{
+  "./**/*.{json,*rc}": ["prettier --write"],
+  "package.json": ["sort-package-json"],
+  "./**/*.go": ["gofmt -w"]
+}
