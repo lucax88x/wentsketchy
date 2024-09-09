@@ -7,6 +7,7 @@
     "clean": "go clean",
     "cli:build": "go build -o ./bin/cli ./cmd/cli/main.go",
     "cli:dev": "go run cmd/cli/main.go",
+    "cp": "bun run build && cp ./bin/cli $HOME/bin/wentsketchy",
     "format": "gofmt -l .",
     "format:fix": "gofmt -w",
     "postinstall": "/bin/sh -c ./postinstall.sh",

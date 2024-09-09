@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/lmittmann/tint"
 	"github.com/lucax88x/wentsketchy/cmd/cli/console"
 	"github.com/spf13/viper"
 )
@@ -29,8 +30,8 @@ type ExecutorBuilder func(
 	console *console.Console,
 ) ProgramExecutor
 
-func Run(appName string, buildExecutor ExecutorBuilder) ExecutionResult {
-	logger := slog.Default()
+func Run(buildExecutor ExecutorBuilder) ExecutionResult {
+	logger := slog.New(tint.NewHandler(os.Stderr, nil))
 
 	viper, err := initViper()
 

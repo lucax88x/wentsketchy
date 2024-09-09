@@ -25,7 +25,8 @@ func NewRootCmd(
 
 	configureRootCmdFlags(viper, rootCmd)
 
-	rootCmd.AddCommand(NewSyncCmd(ctx, logger, viper, console))
+	rootCmd.AddCommand(NewInitCmd(ctx, logger, viper, console))
+	rootCmd.AddCommand(NewUpdateCmd(ctx, logger, viper, console))
 
 	return rootCmd
 }

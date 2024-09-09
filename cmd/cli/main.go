@@ -14,7 +14,7 @@ func cli(viper *viper.Viper, console *console.Console) setup.ProgramExecutor {
 }
 
 func main() {
-	result := setup.Run("cli", cli)
+	result := setup.Run(cli)
 
 	if result == setup.NotOk {
 		os.Exit(1)
