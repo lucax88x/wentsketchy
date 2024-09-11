@@ -11,10 +11,12 @@ import (
 )
 
 type Wentsketchy struct {
-	Logger     *slog.Logger
-	Clock      clock.Clock
-	Aerospace  aerospace.API
-	Sketchybar sketchybar.API
+	Logger             *slog.Logger
+	Clock              clock.Clock
+	Sketchybar         sketchybar.API
+	SketchybarSettings sketchybar.Settings
+	Aerospace          aerospace.Tree
+	aerospaceAPI       aerospace.API
 }
 
 func NewWentsketchy(
@@ -37,8 +39,21 @@ func NewWentsketchy(
 }
 
 func initialize(_ context.Context, di *Wentsketchy) error {
-	di.Aerospace = aerospace.NewAPI(di.Logger)
+	di.aerospaceAPI = aerospace.NewAPI(di.Logger)
+	di.Aerospace = aerospace.NewTree(di.Logger, di.aerospaceAPI)
 	di.Sketchybar = sketchybar.NewAPI(di.Logger)
+
+	di.SketchybarSettings = sketchybar.Settings{
+		LabelColor:    ColorWhite,
+		LabelFont:     FontLabel,
+		LabelFontKind: "Semibold",
+		LabelFontSize: "14.0",
+		IconColor:     ColorWhite,
+		IconFont:      FontIcon,
+		IconFontKind:  "Regular",
+		IconFontSize:  "14.0",
+		IconStripFont: FontAppIcon,
+	}
 
 	return nil
 }

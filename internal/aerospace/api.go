@@ -14,6 +14,7 @@ import (
 type API interface {
 	Monitors(ctx context.Context) ([]*Monitor, error)
 	Workspaces(_ context.Context, monitorID int) ([]*Workspace, error)
+	Windows(_ context.Context, workspaceID string) ([]*Window, error)
 }
 
 type realAPI struct {
@@ -42,7 +43,7 @@ func (api realAPI) Monitors(_ context.Context) ([]*Monitor, error) {
 
 		return &Monitor{
 			Id:   id,
-			Name: strings.TrimSpace(splitted[1]),
+			Name: sanitize(splitted[1]),
 		}, nil
 	})
 }
@@ -56,7 +57,23 @@ func (api realAPI) Workspaces(_ context.Context, monitorID int) ([]*Workspace, e
 
 	return splitAndMap(output, func(splitted []string) (*Workspace, error) {
 		return &Workspace{
-			Id: splitted[0],
+			Id: sanitize(splitted[0]),
+		}, nil
+	})
+}
+
+func (api realAPI) Windows(_ context.Context, workspaceID string) ([]*Window, error) {
+	output, err := command.Run("aerospace", "list-windows", "--workspace", workspaceID)
+
+	if err != nil {
+		return make([]*Window, 0), fmt.Errorf("could not get windows from aerospace %w", err)
+	}
+
+	return splitAndMap(output, func(splitted []string) (*Window, error) {
+		return &Window{
+			Id:    sanitize(splitted[0]),
+			App:   sanitize(splitted[1]),
+			Title: sanitize(splitted[2]),
 		}, nil
 	})
 }
@@ -87,4 +104,8 @@ func splitAndMap[T any](output string, mapTo func([]string) (T, error)) ([]T, er
 	}
 
 	return result, aggregatedErr
+}
+
+func sanitize(str string) string {
+	return strings.TrimSpace(str)
 }

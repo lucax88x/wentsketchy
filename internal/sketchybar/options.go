@@ -8,7 +8,8 @@ type PaddingOptions struct {
 }
 
 type ColorOptions struct {
-	Color string
+	Color          string
+	HighlightColor string
 }
 
 type BorderOptions struct {
@@ -46,6 +47,10 @@ func (opts ColorOptions) ToArgs(parent *string) []string {
 
 	if opts.Color != "" {
 		args = withParent(args, parent, "color=%s", opts.Color)
+	}
+
+	if opts.HighlightColor != "" {
+		args = withParent(args, parent, "highlight_color=%s", opts.Color)
 	}
 
 	return args

@@ -6,8 +6,9 @@ import (
 )
 
 func Run(name string, arg ...string) (string, error) {
-	fmt.Println(fmt.Sprintf("%s %d %v", name, len(arg), arg))
 	cmd := exec.Command(name, arg...)
+
+	fmt.Println(fmt.Sprintf("%s %v", cmd.Path, cmd.Args))
 
 	out, err := cmd.Output()
 

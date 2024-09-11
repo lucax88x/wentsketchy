@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/lucax88x/wentsketchy/internal/command"
 )
@@ -23,9 +24,7 @@ func NewAPI(logger *slog.Logger) API {
 }
 
 func (api realAPI) Run(ctx context.Context, arg ...[]string) error {
-	a := flatten(arg...)
-
-	out, err := command.Run("sketchybar", a...)
+	out, err := command.Run("sketchybar", flattenAndFix(arg...)...)
 
 	api.logger.InfoContext(ctx, out)
 
@@ -36,10 +35,14 @@ func (api realAPI) Run(ctx context.Context, arg ...[]string) error {
 	return nil
 }
 
-func flatten(slices ...[]string) []string {
+func flattenAndFix(slices ...[]string) []string {
 	result := []string{}
 	for _, slice := range slices {
-		result = append(result, slice...)
+		for i, str := range slice {
+			slice[i] = strings.TrimSpace(str)
+			result = append(result, slice[i])
+		}
+
 	}
 	return result
 }

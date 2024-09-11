@@ -1,5 +1,0 @@
-package config
-
-const (
-	IconClock = ""
-)

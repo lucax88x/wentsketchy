@@ -9,42 +9,49 @@ import (
 )
 
 func initRight(ctx context.Context, di *wentsketchy.Wentsketchy) error {
-	err := initCalendar(ctx, di)
+	batches, err := initCalendar()
 
 	if err != nil {
 		return fmt.Errorf("init calendar %w", err)
+	}
+	err = di.Sketchybar.Run(ctx, batches)
+
+	if err != nil {
+		return fmt.Errorf("apply to sketchybar %w", err)
 	}
 
 	return nil
 }
 
-func initCalendar(ctx context.Context, di *wentsketchy.Wentsketchy) error {
+func initCalendar() ([]string, error) {
+	var batches = make([][]string, 0)
+
 	calendar := sketchybar.ItemOptions{
 		Icon: sketchybar.ItemIconOptions{
-			Value: IconClock,
+			Value: wentsketchy.IconClock,
 			Font: sketchybar.FontOptions{
-				Font: iconFont,
+				Font: wentsketchy.FontIcon,
 				Kind: "Regular",
 				Size: "12.0",
 			},
 			PaddingOptions: sketchybar.PaddingOptions{
 				Right: 5,
-				Left:  10,
+				Left:  5,
 			},
 		},
 		Label: sketchybar.ItemLabelOptions{
 			PaddingOptions: sketchybar.PaddingOptions{
 				Right: 5,
-				Left:  10,
+				Left:  5,
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
 			BorderOptions: sketchybar.BorderOptions{
 				Width: 2,
-				Color: ColorBackground1,
+				Color: wentsketchy.ColorBackground1,
 			},
 			ColorOptions: sketchybar.ColorOptions{
-				Color: ColorBackground1,
+				Color: wentsketchy.ColorBackground1,
 			},
 		},
 		UpdateFreq: 30,
@@ -52,10 +59,9 @@ func initCalendar(ctx context.Context, di *wentsketchy.Wentsketchy) error {
 		// Click_script:            "$PLUGIN_DIR/zen.sh",
 	}
 
-	return di.Sketchybar.Run(
-		ctx,
-		s("--add", "item", "calendar", "right"),
-		m(s("--set", "calendar"), calendar.ToArgs()),
-		s("--subscribe", "calendar", "system_woke"),
-	)
+	batches = batch(batches, s("--add", "item", "calendar", "right"))
+	batches = batch(batches, m(s("--set", "calendar"), calendar.ToArgs()))
+	batches = batch(batches, s("--subscribe", "calendar", "system_woke"))
+
+	return flatten(batches...), nil
 }

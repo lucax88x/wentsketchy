@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "private": "true",
   "scripts": {
-    "build": "bun run cli:build",
+    "build": "go build -o ./bin/cli ./cmd/cli/main.go",
     "clean": "go clean",
-    "cli:build": "go build -o ./bin/cli ./cmd/cli/main.go",
-    "cli:dev": "go run cmd/cli/main.go",
     "cp": "bun run build && cp ./bin/cli $HOME/bin/wentsketchy",
+    "dev": "go run cmd/cli/main.go",
     "format": "gofmt -l .",
     "format:fix": "gofmt -w",
     "postinstall": "/bin/sh -c ./postinstall.sh",

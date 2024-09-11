@@ -2,6 +2,7 @@ package sketchybar
 
 type ItemIconOptions struct {
 	PaddingOptions
+	ColorOptions
 	Value string
 	Font  FontOptions
 }
@@ -11,13 +12,14 @@ func (opts ItemIconOptions) ToArgs() []string {
 
 	parent := "icon"
 	args = append(args, opts.PaddingOptions.ToArgs(&parent)...)
+	args = append(args, opts.ColorOptions.ToArgs(&parent)...)
 
 	if opts.Value != "" {
 		args = with(args, "icon=%s", opts.Value)
 	}
 
 	if opts.Font != EmptyFontOptions {
-		args = with(args, "icon.font=%s'", opts.Font.String())
+		args = with(args, "icon.font=%s", opts.Font.String())
 	}
 
 	return args
@@ -25,7 +27,9 @@ func (opts ItemIconOptions) ToArgs() []string {
 
 type ItemLabelOptions struct {
 	PaddingOptions
+	ColorOptions
 	Value string
+	Font  FontOptions
 }
 
 func (opts ItemLabelOptions) ToArgs() []string {
@@ -34,20 +38,25 @@ func (opts ItemLabelOptions) ToArgs() []string {
 	parent := "label"
 
 	args = append(args, opts.PaddingOptions.ToArgs(&parent)...)
+	args = append(args, opts.ColorOptions.ToArgs(&parent)...)
 
 	if opts.Value != "" {
 		args = with(args, "label=%s", opts.Value)
+	}
+	if opts.Font != EmptyFontOptions {
+		args = with(args, "label.font=%s", opts.Font.String())
 	}
 
 	return args
 }
 
 type ItemOptions struct {
-	Icon       ItemIconOptions
-	Label      ItemLabelOptions
-	Background BackgroundOptions
-	Border     BorderOptions
-	// BorderColor     string
+	Icon        ItemIconOptions
+	Label       ItemLabelOptions
+	Background  BackgroundOptions
+	Border      BorderOptions
+	Display     string
+	Space       string
 	UpdateFreq  int
 	Script      string
 	ClickScript string
@@ -61,6 +70,12 @@ func (opts ItemOptions) ToArgs() []string {
 	args = append(args, opts.Icon.ToArgs()...)
 	args = append(args, opts.Border.ToArgs(nil)...)
 
+	if opts.Display != "" {
+		args = with(args, "display=%s", opts.Display)
+	}
+	if opts.Space != "" {
+		args = with(args, "space=%s", opts.Space)
+	}
 	if opts.UpdateFreq != 0 {
 		args = with(args, "update_freq=%d", opts.UpdateFreq)
 	}
