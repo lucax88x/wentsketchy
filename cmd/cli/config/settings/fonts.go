@@ -1,4 +1,4 @@
-package wentsketchy
+package settings
 
 const FontLabel = "SF Pro"
 const FontIcon = "Hack Nerd Font"

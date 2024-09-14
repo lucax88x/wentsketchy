@@ -20,7 +20,6 @@ func (opts BarOptions) ToArgs() []string {
 	args = append(args, opts.PaddingOptions.ToArgs(nil)...)
 	args = append(args, opts.ColorOptions.ToArgs(nil)...)
 	args = append(args, opts.BorderOptions.ToArgs(nil)...)
-	args = append(args, opts.Background.ToArgs()...)
 
 	if opts.Height != 0 {
 		args = with(args, "height=%d", opts.Height)

@@ -50,7 +50,7 @@ func (opts ColorOptions) ToArgs(parent *string) []string {
 	}
 
 	if opts.HighlightColor != "" {
-		args = withParent(args, parent, "highlight_color=%s", opts.Color)
+		args = withParent(args, parent, "highlight_color=%s", opts.HighlightColor)
 	}
 
 	return args
@@ -75,6 +75,18 @@ func withParent[T any](args []string, parent *string, format string, value T) []
 	}
 
 	return append(args, fmt.Sprintf(format, value))
+}
+
+func mergeParentAndPrefix(parent *string, prefix string) *string {
+	result := &prefix
+
+	if parent != nil {
+		concatenated := *parent + "." + prefix
+
+		result = &concatenated
+	}
+
+	return result
 }
 
 func with[T any](args []string, format string, value T) []string {

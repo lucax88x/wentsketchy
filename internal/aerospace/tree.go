@@ -1,7 +1,6 @@
 package aerospace
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"sort"
@@ -10,7 +9,7 @@ import (
 
 type Tree interface {
 	// Workspace id is ordered because of numbers, but windows cannot be ordered
-	Build(ctx context.Context) (*AerospaceTree, error)
+	Build() (*AerospaceTree, error)
 }
 
 type realTree struct {
@@ -26,14 +25,13 @@ func NewTree(logger *slog.Logger, api API) Tree {
 }
 
 func (t realTree) fetchWorkspaces(
-	ctx context.Context,
 	monitor *Monitor,
 	ch chan<- *WorkspacesResult,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
-	workspaces, err := t.api.Workspaces(ctx, monitor.Id)
+	workspaces, err := t.api.Workspaces(monitor.ID)
 
 	if err != nil {
 		ch <- &WorkspacesResult{
@@ -51,14 +49,13 @@ func (t realTree) fetchWorkspaces(
 }
 
 func (t realTree) fetchWindows(
-	ctx context.Context,
 	workspace *Workspace,
 	ch chan<- *WindowsResult,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
-	windows, err := t.api.Windows(ctx, workspace.Id)
+	windows, err := t.api.Windows(workspace.ID)
 
 	if err != nil {
 		ch <- &WindowsResult{
@@ -77,17 +74,16 @@ func (t realTree) fetchWindows(
 }
 
 func (t realTree) fetchWorkspacesWindows(
-	ctx context.Context,
 	workspaces []*Workspace,
-) ([]*WorkspaceWithWindows, error) {
-	t.logger.InfoContext(ctx, "fetching for workspaces", slog.Int("workspaces", len(workspaces)))
-
+	indexedWorkspaces IndexedWorkspaces,
+	indexedWindows IndexedWindows,
+) ([]*WorkspaceIDWithWindowIDs, error) {
 	var wg sync.WaitGroup
 	windowsCh := make(chan *WindowsResult, len(workspaces))
 	wg.Add(len(workspaces))
 
 	for _, workspace := range workspaces {
-		go t.fetchWindows(ctx, workspace, windowsCh, &wg)
+		go t.fetchWindows(workspace, windowsCh, &wg)
 	}
 
 	go func() {
@@ -95,37 +91,53 @@ func (t realTree) fetchWorkspacesWindows(
 		close(windowsCh)
 	}()
 
-	var result []*WorkspaceWithWindows
+	var result []*WorkspaceIDWithWindowIDs
 	var aggregatedErr error
 	for message := range windowsCh {
 		if message.Error != nil {
 			aggregatedErr = errors.Join(aggregatedErr, message.Error)
 		}
 
-		result = append(result, &WorkspaceWithWindows{
-			Workspace: message.Workspace,
-			Windows:   message.Windows,
+		windowIDs := make([]int, len(message.Windows))
+		for i, window := range message.Windows {
+			indexedWindows[window.ID] = window
+			windowIDs[i] = window.ID
+		}
+
+		indexedWorkspaces[message.Workspace.ID] = &WorkspaceWithWindowIDs{
+			message.Workspace,
+			windowIDs,
+		}
+
+		result = append(result, &WorkspaceIDWithWindowIDs{
+			Workspace: message.Workspace.ID,
+			Windows:   windowIDs,
 		})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].Workspace.Id < result[j].Workspace.Id
+		return result[i].Workspace < result[j].Workspace
 	})
 
 	return result, aggregatedErr
 }
 
 func (t realTree) fetchMonitorsWorkspaces(
-	ctx context.Context,
 	monitors []*Monitor,
-) ([]*MonitorWithWorkspaces, error) {
-	t.logger.InfoContext(ctx, "fetching for monitors", slog.Int("monitors", len(monitors)))
+	indexedMonitors IndexedMonitors,
+	indexedWorkspaces IndexedWorkspaces,
+	indexedWindows IndexedWindows,
+) ([]*MonitorIDWithWorkspaceIDs, error) {
 	var wg sync.WaitGroup
 	workspacesCh := make(chan *WorkspacesResult, len(monitors))
 	wg.Add(len(monitors))
 
 	for _, monitor := range monitors {
-		go t.fetchWorkspaces(ctx, monitor, workspacesCh, &wg)
+		go t.fetchWorkspaces(
+			monitor,
+			workspacesCh,
+			&wg,
+		)
 	}
 
 	go func() {
@@ -133,21 +145,35 @@ func (t realTree) fetchMonitorsWorkspaces(
 		close(workspacesCh)
 	}()
 
-	var result []*MonitorWithWorkspaces
+	var result []*MonitorIDWithWorkspaceIDs
 	var aggregatedErr error
 	for message := range workspacesCh {
 		if message.Error != nil {
 			aggregatedErr = errors.Join(aggregatedErr, message.Error)
 		}
 
-		workspacesWithWindows, err := t.fetchWorkspacesWindows(ctx, message.Workspaces)
+		workspacesWithWindows, err := t.fetchWorkspacesWindows(
+			message.Workspaces,
+			indexedWorkspaces,
+			indexedWindows,
+		)
 
 		if err != nil {
 			aggregatedErr = errors.Join(aggregatedErr, err)
 		}
 
-		result = append(result, &MonitorWithWorkspaces{
-			Monitor:    message.Monitor,
+		workspaceIDs := make([]string, len(workspacesWithWindows))
+		for i, workspacesWithWindows := range workspacesWithWindows {
+			workspaceIDs[i] = workspacesWithWindows.Workspace
+		}
+
+		indexedMonitors[message.Monitor.ID] = &MonitorWithWorkspaceIDs{
+			message.Monitor,
+			workspaceIDs,
+		}
+
+		result = append(result, &MonitorIDWithWorkspaceIDs{
+			Monitor:    message.Monitor.ID,
 			Workspaces: workspacesWithWindows,
 		})
 	}
@@ -155,22 +181,44 @@ func (t realTree) fetchMonitorsWorkspaces(
 	return result, aggregatedErr
 }
 
-func (t realTree) Build(ctx context.Context) (*AerospaceTree, error) {
-	monitors, err := t.api.Monitors(ctx)
+func (t realTree) Build() (*AerospaceTree, error) {
+	monitors, err := t.api.Monitors()
 
 	if err != nil {
 		return nil, err
 	}
 
-	monitorsWithWorkspaces, err := t.fetchMonitorsWorkspaces(ctx, monitors)
+	indexedMonitors := make(IndexedMonitors, 0)
+	indexedWorkspaces := make(IndexedWorkspaces, 0)
+	indexedWindows := make(IndexedWindows, 0)
+
+	monitorsWithWorkspaces, err := t.fetchMonitorsWorkspaces(
+		monitors,
+		indexedMonitors,
+		indexedWorkspaces,
+		indexedWindows,
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &AerospaceTree{
-		Monitors: monitorsWithWorkspaces,
+		monitorsWithWorkspaces,
+		indexedMonitors,
+		indexedWorkspaces,
+		indexedWindows,
 	}, nil
+}
+
+func (t realTree) WindowsOfFocusedWorkspace() ([]*Window, error) {
+	focusedWorkspace, err := t.api.FocusedWorkspace()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return t.api.Windows(focusedWorkspace.ID)
 }
 
 type WorkspacesResult struct {
@@ -185,16 +233,59 @@ type WindowsResult struct {
 	Error     error
 }
 
-type WorkspaceWithWindows struct {
-	Workspace *Workspace
-	Windows   []*Window
-}
+type IndexedMonitors = map[int]*MonitorWithWorkspaceIDs
+type IndexedWorkspaces = map[string]*WorkspaceWithWindowIDs
+type IndexedWindows = map[int]*Window
 
 type AerospaceTree struct {
-	Monitors []*MonitorWithWorkspaces
+	Monitors []*MonitorIDWithWorkspaceIDs
+
+	IndexedMonitors   IndexedMonitors
+	IndexedWorkspaces IndexedWorkspaces
+	IndexedWindows    IndexedWindows
 }
 
-type MonitorWithWorkspaces struct {
+type Data struct {
+	FocusedWorkspaceID string
+	Tree               *AerospaceTree
+}
+
+type MonitorIDWithWorkspaceIDs struct {
+	Monitor    int
+	Workspaces []*WorkspaceIDWithWindowIDs
+}
+
+type WorkspaceIDWithWindowIDs struct {
+	Workspace string
+	Windows   []int
+}
+
+type MonitorWithWorkspaceIDs struct {
 	Monitor    *Monitor
-	Workspaces []*WorkspaceWithWindows
+	Workspaces []string
+}
+
+type WorkspaceWithWindowIDs struct {
+	Workspace *Workspace
+	Windows   []int
+}
+
+func (data *Data) WindowsOfFocusedWorkspace(workspaceID string) []*Window {
+	workspace, found := data.Tree.IndexedWorkspaces[workspaceID]
+	if !found {
+		return make([]*Window, 0)
+	}
+
+	windows := make([]*Window, 0, len(workspace.Windows))
+	for _, windowID := range workspace.Windows {
+		window, foundWindow := data.Tree.IndexedWindows[windowID]
+
+		if !foundWindow {
+			// log
+			continue
+		}
+
+		windows = append(windows, window)
+	}
+	return windows
 }

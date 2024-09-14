@@ -1,6 +1,6 @@
 package aerospace
 
 type Monitor struct {
-	Id   int
+	ID   int
 	Name string
 }

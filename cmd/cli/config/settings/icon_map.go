@@ -1,4 +1,4 @@
-package wentsketchy
+package settings
 
 // https://github.com/kvndrsslr/sketchybar-app-font/releases
 var AppIcons = map[string]string{
@@ -285,7 +285,7 @@ var AppIcons = map[string]string{
 	"WeCom":                            ":wecom:",
 	"WezTerm":                          ":wezterm:",
 	"WhatsApp":                         ":whats_app:",
-	"‎WhatsApp":                        ":whats_app:",
+	"\u200eWhatsApp":                   ":whats_app:",
 	"Xcode":                            ":xcode:",
 	"Yandex Music":                     ":yandex_music:",
 	"Yuque":                            ":yuque:",

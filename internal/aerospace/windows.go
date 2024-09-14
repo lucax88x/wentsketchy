@@ -1,7 +1,7 @@
 package aerospace
 
 type Window struct {
-	Id    string
+	ID    int
 	App   string
 	Title string
 }

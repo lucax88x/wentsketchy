@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/lmittmann/tint"
 	"github.com/lucax88x/wentsketchy/cmd/cli/console"
@@ -31,7 +32,14 @@ type ExecutorBuilder func(
 ) ProgramExecutor
 
 func Run(buildExecutor ExecutorBuilder) ExecutionResult {
+	start := time.Now()
+
 	logger := slog.New(tint.NewHandler(os.Stderr, nil))
+
+	defer func() {
+		elapsed := time.Since(start)
+		logger.Info("cli: took", slog.Duration("elapsed", elapsed))
+	}()
 
 	viper, err := initViper()
 

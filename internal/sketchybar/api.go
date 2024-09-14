@@ -10,27 +10,32 @@ import (
 )
 
 type API interface {
-	Run(ctx context.Context, arg ...[]string) error
+	Run(ctx context.Context, arg []string) error
 }
 
 type realAPI struct {
 	logger *slog.Logger
 }
 
-func NewAPI(logger *slog.Logger) API {
+func NewAPI(logger *slog.Logger) realAPI {
 	return realAPI{
 		logger,
 	}
 }
 
-func (api realAPI) Run(ctx context.Context, arg ...[]string) error {
-	out, err := command.Run("sketchybar", flattenAndFix(arg...)...)
+func (api realAPI) Run(ctx context.Context, arg []string) error {
+	if len(arg) == 0 {
+		api.logger.InfoContext(ctx, "sketchybar: there were no arguments, skipping")
+		return nil
+	}
 
-	api.logger.InfoContext(ctx, out)
+	out, err := command.Run("sketchybar", flattenAndFix(arg)...)
 
 	if err != nil {
-		return fmt.Errorf("error while running sketchybar %w", err)
+		return fmt.Errorf("sketchybar: error while running. %w", err)
 	}
+
+	api.logger.InfoContext(ctx, out)
 
 	return nil
 }
@@ -42,7 +47,6 @@ func flattenAndFix(slices ...[]string) []string {
 			slice[i] = strings.TrimSpace(str)
 			result = append(result, slice[i])
 		}
-
 	}
 	return result
 }

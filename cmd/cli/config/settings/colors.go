@@ -1,4 +1,4 @@
-package wentsketchy
+package settings
 
 const (
 	ColorBlack                = "0xff181926"

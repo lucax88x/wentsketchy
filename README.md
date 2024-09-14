@@ -1,6 +1,5 @@
 # minimal setup to test it
 
-
 minimal setup
 
 ```shell
@@ -28,3 +27,13 @@ sketchybar --update
 echo "sketchybar configuation loaded.."
 ```
 
+
+## Architecture
+
+wip
+
+
+## TODO
+
+- find out why wentsketchy hangs
+- workspace focused event

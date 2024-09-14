@@ -3,8 +3,10 @@ package sketchybar
 type ItemIconOptions struct {
 	PaddingOptions
 	ColorOptions
-	Value string
-	Font  FontOptions
+	BackgroundOptions
+	Value     string
+	Font      FontOptions
+	Highlight bool
 }
 
 func (opts ItemIconOptions) ToArgs() []string {
@@ -13,6 +15,7 @@ func (opts ItemIconOptions) ToArgs() []string {
 	parent := "icon"
 	args = append(args, opts.PaddingOptions.ToArgs(&parent)...)
 	args = append(args, opts.ColorOptions.ToArgs(&parent)...)
+	args = append(args, opts.BackgroundOptions.ToArgs(&parent)...)
 
 	if opts.Value != "" {
 		args = with(args, "icon=%s", opts.Value)
@@ -22,14 +25,19 @@ func (opts ItemIconOptions) ToArgs() []string {
 		args = with(args, "icon.font=%s", opts.Font.String())
 	}
 
+	if opts.Highlight {
+		args = with(args, "icon.highlight=%s", "on")
+	}
+
 	return args
 }
 
 type ItemLabelOptions struct {
 	PaddingOptions
 	ColorOptions
-	Value string
-	Font  FontOptions
+	Value     string
+	Font      FontOptions
+	Highlight bool
 }
 
 func (opts ItemLabelOptions) ToArgs() []string {
@@ -45,6 +53,9 @@ func (opts ItemLabelOptions) ToArgs() []string {
 	}
 	if opts.Font != EmptyFontOptions {
 		args = with(args, "label.font=%s", opts.Font.String())
+	}
+	if opts.Highlight {
+		args = with(args, "icon.highlight=%s", "on")
 	}
 
 	return args
@@ -65,7 +76,7 @@ type ItemOptions struct {
 func (opts ItemOptions) ToArgs() []string {
 	args := []string{}
 
-	args = append(args, opts.Background.ToArgs()...)
+	args = append(args, opts.Background.ToArgs(nil)...)
 	args = append(args, opts.Label.ToArgs()...)
 	args = append(args, opts.Icon.ToArgs()...)
 	args = append(args, opts.Border.ToArgs(nil)...)

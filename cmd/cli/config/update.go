@@ -3,32 +3,41 @@ package config
 import (
 	"context"
 	"fmt"
-	"time"
+	"log/slog"
 
-	"github.com/lucax88x/wentsketchy/internal/formatter"
-	"github.com/lucax88x/wentsketchy/internal/sketchybar"
-	"github.com/lucax88x/wentsketchy/internal/wentsketchy"
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/args"
 )
 
-func Update(ctx context.Context, di *wentsketchy.Wentsketchy) error {
-	err := updateCalendar(ctx, di)
+func (cfg *Config) Update(
+	ctx context.Context,
+	args *args.Args,
+) error {
+	cfg.logger.InfoContext(
+		ctx,
+		"reacting to event",
+		slog.Any("name", args.Name),
+		slog.Any("event", args.Event),
+	)
+
+	var batches = make([][]string, 0)
+
+	batches, err := cfg.items.Calendar.Update(batches, args)
 
 	if err != nil {
 		return fmt.Errorf("update calendar %w", err)
 	}
 
-	return nil
-}
+	batches, err = cfg.items.FrontApp.Update(batches, args)
 
-func updateCalendar(ctx context.Context, di *wentsketchy.Wentsketchy) error {
-	calendar := sketchybar.ItemOptions{
-		Label: sketchybar.ItemLabelOptions{
-			Value: formatter.HoursMinutes(time.Now()),
-		},
+	if err != nil {
+		return fmt.Errorf("update calendar %w", err)
 	}
 
-	return di.Sketchybar.Run(
-		ctx,
-		m(s("--set", "calendar"), calendar.ToArgs()),
-	)
+	err = cfg.sketchybar.Run(ctx, flatten(batches...))
+
+	if err != nil {
+		return fmt.Errorf("apply to sketchybar %w", err)
+	}
+
+	return nil
 }
