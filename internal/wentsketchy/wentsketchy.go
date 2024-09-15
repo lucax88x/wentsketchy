@@ -9,6 +9,7 @@ import (
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/items"
 	"github.com/lucax88x/wentsketchy/internal/aerospace"
 	"github.com/lucax88x/wentsketchy/internal/clock"
+	"github.com/lucax88x/wentsketchy/internal/fifo"
 	"github.com/lucax88x/wentsketchy/internal/server"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 )
@@ -17,7 +18,8 @@ type Wentsketchy struct {
 	Logger               *slog.Logger
 	Clock                clock.Clock
 	Config               *config.Config
-	Server               server.FifoServer
+	Fifo                 *fifo.Reader
+	Server               *server.FifoServer
 	Sketchybar           sketchybar.API
 	RefreshAerospaceData func()
 	AerospaceData        *aerospace.Data
@@ -71,7 +73,8 @@ func initialize(ctx context.Context, di *Wentsketchy) error {
 		},
 	)
 
-	di.Server = server.NewFifoServer(di.Logger, di.Config)
+	di.Fifo = fifo.NewFifoReader(di.Logger)
+	di.Server = server.NewFifoServer(di.Logger, di.Config, di.Fifo)
 
 	return nil
 }

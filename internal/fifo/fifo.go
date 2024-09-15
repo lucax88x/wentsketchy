@@ -2,74 +2,103 @@ package fifo
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
-	"sync"
 	"syscall"
 )
+
+type Reader struct {
+	logger *slog.Logger
+}
+
+func NewFifoReader(logger *slog.Logger) *Reader {
+	return &Reader{
+		logger,
+	}
+}
 
 func makeSureFifoExists(path string) error {
 	_, err := os.Stat(path)
 
 	if err == nil {
+		// TODO: check if existing is fifo!
 		return nil
 	}
 
 	return syscall.Mkfifo(path, 0640)
 }
 
-func Start(path string) error {
+func (f *Reader) Start(path string) error {
 	err := makeSureFifoExists(path)
 
 	if err != nil {
-		return fmt.Errorf("fifo: error creating FIFO. %w", err)
+		return fmt.Errorf("fifo: error creating file. %w", err)
 	}
 
 	return nil
 }
 
-func Listen(
+func (f *Reader) Listen(
+	ctx context.Context,
 	path string,
 	ch chan<- string,
-	wg *sync.WaitGroup,
 ) error {
-	defer func() {
-		wg.Done()
-	}()
-
-	pipe, err := os.OpenFile(path, os.O_RDWR, 0640)
+	pipe, err := os.OpenFile(path, os.O_RDWR, os.ModeNamedPipe)
 
 	defer func() {
 		err = pipe.Close()
 
-		err = fmt.Errorf("fifo: could not close reader %w", err)
+		if err != nil {
+			err = fmt.Errorf("fifo: could not close reader %w", err)
+		}
 	}()
 
 	if err != nil {
-		return fmt.Errorf("fifo: error opening FIFO for reading. %w", err)
+		return fmt.Errorf("fifo: error opening for reading. %w", err)
 	}
 
 	reader := bufio.NewReader(pipe)
 
-	for {
-		line, readErr := reader.ReadBytes('\n')
+	internalCh := make(chan []byte)
+	continueReading := true
 
-		if readErr != nil {
-			err = readErr
-			break
+	defer close(internalCh)
+
+	go func() {
+		for continueReading {
+			line, readErr := reader.ReadBytes('\n')
+
+			if readErr != nil {
+				err = readErr
+				f.logger.ErrorContext(ctx, "fifo: readbytes err", slog.Any("error", err))
+				break
+			}
+
+			if continueReading {
+				internalCh <- line
+			}
 		}
+	}()
 
-		// Remove new line char
-		nline := string(line)
-		nline = strings.TrimRight(nline, "\r\n")
+	for {
+		select {
+		case <-ctx.Done():
+			f.logger.InfoContext(ctx, "fifo: cancel")
+			continueReading = false
 
-		ch <- nline
+			err = pipe.Close()
+
+			if err != nil {
+				err = fmt.Errorf("fifo: could not close reader %w", err)
+			}
+			return nil
+		case data := <-internalCh:
+			nline := string(data)
+			nline = strings.TrimRight(nline, "\r\n")
+			ch <- nline
+		}
 	}
-
-	if err != nil {
-		return fmt.Errorf("error opening FIFO for reading. %w", err)
-	}
-
-	return nil
 }

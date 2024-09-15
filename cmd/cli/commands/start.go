@@ -12,7 +12,6 @@ import (
 
 	"github.com/lucax88x/wentsketchy/cmd/cli/console"
 	"github.com/lucax88x/wentsketchy/cmd/cli/runner"
-	"github.com/lucax88x/wentsketchy/internal/fifo"
 	"github.com/lucax88x/wentsketchy/internal/jobs"
 	"github.com/lucax88x/wentsketchy/internal/wentsketchy"
 
@@ -66,7 +65,7 @@ func runStartCmd(options *startOptions) runner.RunE {
 	) error {
 		di.Logger.InfoContext(ctx, "start: starting fifo", slog.String("path", options.fifo))
 
-		err := fifo.Start(options.fifo)
+		err := di.Fifo.Start(options.fifo)
 
 		if err != nil {
 			return fmt.Errorf("fifo: could not init %w", err)
@@ -81,8 +80,7 @@ func runStartCmd(options *startOptions) runner.RunE {
 		ch := make(chan error, 2)
 
 		go func() {
-			defer wg.Done()
-			runServer(ctx, di, options.fifo)
+			runServer(ctx, di, options.fifo, &wg)
 
 			if err != nil {
 				ch <- err
@@ -92,8 +90,7 @@ func runStartCmd(options *startOptions) runner.RunE {
 		}()
 
 		go func() {
-			defer wg.Done()
-			runJobs(ctx, di)
+			runJobs(ctx, di, &wg)
 
 			if err != nil {
 				ch <- err
@@ -123,7 +120,10 @@ func runServer(
 	ctx context.Context,
 	di *wentsketchy.Wentsketchy,
 	path string,
+	wg *sync.WaitGroup,
 ) {
+	defer wg.Done()
+
 	di.Logger.InfoContext(ctx, "server: starting")
 
 	quit := make(chan os.Signal, 1)
@@ -145,7 +145,10 @@ func runServer(
 func runJobs(
 	ctx context.Context,
 	di *wentsketchy.Wentsketchy,
+	wg *sync.WaitGroup,
 ) {
+	defer wg.Done()
+
 	di.Logger.InfoContext(ctx, "jobs: starting")
 
 	quit := make(chan os.Signal, 1)
