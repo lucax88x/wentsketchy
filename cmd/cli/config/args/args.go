@@ -1,6 +1,8 @@
 package args
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -8,54 +10,47 @@ import (
 // https://felixkratz.github.io/SketchyBar/config/events
 type Args struct {
 	// the item name
-	Name string
+	Name string `json:"name"`
 	// the event
-	Event    string
-	Info     string
-	Button   string
-	Modifier string
+	Event    string `json:"event"`
+	Info     string `json:"info"`
+	Button   string `json:"button"`
+	Modifier string `json:"modifier"`
 }
 
-func FromMsg(msg string) *Args {
-	msg = strings.Replace(msg, "update ", "", 1)
+func FromMsg(msg string) (*Args, error) {
+	msg, _ = strings.CutPrefix(msg, "update")
 
-	args := strings.Split(msg, "|")
+	var args *Args
+	err := json.Unmarshal([]byte(msg), &args)
 
-	name := ""
-	event := ""
-	info := ""
-	button := ""
-	modifier := ""
-
-	if len(args) > 0 {
-		name = args[0]
+	if err != nil {
+		return nil, fmt.Errorf("args: could not deserialize data. %w", err)
 	}
 
-	if len(args) > 1 {
-		event = args[1]
-	}
-
-	if len(args) > 2 {
-		info = args[2]
-	}
-
-	if len(args) > 3 {
-		button = args[3]
-	}
-
-	if len(args) > 4 {
-		modifier = args[4]
-	}
-
-	return &Args{
-		Name:     name,
-		Event:    event,
-		Info:     info,
-		Button:   button,
-		Modifier: modifier,
-	}
+	return args, nil
 }
 
-func BuildEvent(path string) string {
-	return fmt.Sprintf(`echo "update $NAME|$SENDER|$INFO|$BUTTON|$MODIFIER" > %s`, path)
+func BuildEvent(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("args: path is empty")
+	}
+
+	data := &Args{
+		Name:     "$NAME",
+		Event:    "$SENDER",
+		Info:     "$INFO",
+		Button:   "$BUTTON",
+		Modifier: "$MODIFIER",
+	}
+
+	bytes, err := json.Marshal(data)
+
+	if err != nil {
+		return "", fmt.Errorf("args: could not serialize data. %w", err)
+	}
+
+	serialized := strings.ReplaceAll(string(bytes), `"`, `\"`)
+
+	return fmt.Sprintf(`echo "update %s" > %s`, serialized, path), nil
 }

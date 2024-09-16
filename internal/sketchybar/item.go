@@ -27,6 +27,8 @@ func (opts ItemIconOptions) ToArgs() []string {
 
 	if opts.Highlight {
 		args = with(args, "icon.highlight=%s", "on")
+	} else {
+		args = with(args, "icon.highlight=%s", "off")
 	}
 
 	return args
@@ -56,6 +58,8 @@ func (opts ItemLabelOptions) ToArgs() []string {
 	}
 	if opts.Highlight {
 		args = with(args, "icon.highlight=%s", "on")
+	} else {
+		args = with(args, "icon.highlight=%s", "off")
 	}
 
 	return args
@@ -66,9 +70,12 @@ type ItemOptions struct {
 	Label       ItemLabelOptions
 	Background  BackgroundOptions
 	Border      BorderOptions
+	Padding     PaddingOptions
 	Display     string
 	Space       string
 	UpdateFreq  int
+	Updates     string
+	ScrollTexts bool
 	Script      string
 	ClickScript string
 }
@@ -80,6 +87,7 @@ func (opts ItemOptions) ToArgs() []string {
 	args = append(args, opts.Label.ToArgs()...)
 	args = append(args, opts.Icon.ToArgs()...)
 	args = append(args, opts.Border.ToArgs(nil)...)
+	args = append(args, opts.Padding.ToArgs(nil)...)
 
 	if opts.Display != "" {
 		args = with(args, "display=%s", opts.Display)
@@ -89,6 +97,14 @@ func (opts ItemOptions) ToArgs() []string {
 	}
 	if opts.UpdateFreq != 0 {
 		args = with(args, "update_freq=%d", opts.UpdateFreq)
+	}
+	if opts.Updates != "" {
+		args = with(args, "updates=%s", opts.Updates)
+	}
+	if opts.ScrollTexts {
+		args = with(args, "scroll_texts=%s", "on")
+	} else {
+		args = with(args, "scroll_texts=%s", "off")
 	}
 	if opts.Script != "" {
 		args = with(args, "script=%s", opts.Script)

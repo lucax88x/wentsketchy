@@ -14,6 +14,10 @@ type AerospaceItem struct {
 	AerospaceData *aerospace.Data
 }
 
+func NewAerospaceItem(data *aerospace.Data) AerospaceItem {
+	return AerospaceItem{data}
+}
+
 func (i AerospaceItem) Init(
 	batches [][]string,
 ) ([][]string, error) {

@@ -246,6 +246,7 @@ type AerospaceTree struct {
 }
 
 type Data struct {
+	PrevWorkspaceID    string
 	FocusedWorkspaceID string
 	Tree               *AerospaceTree
 }
@@ -270,7 +271,15 @@ type WorkspaceWithWindowIDs struct {
 	Windows   []int
 }
 
-func (data *Data) WindowsOfFocusedWorkspace(workspaceID string) []*Window {
+func (data *Data) SetPrevWorkspace(workspaceID string) {
+	data.PrevWorkspaceID = workspaceID
+}
+
+func (data *Data) SetFocusedWorkspace(workspaceID string) {
+	data.FocusedWorkspaceID = workspaceID
+}
+
+func (data *Data) WindowsOfWorkspace(workspaceID string) []*Window {
 	workspace, found := data.Tree.IndexedWorkspaces[workspaceID]
 	if !found {
 		return make([]*Window, 0)

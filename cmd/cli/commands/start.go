@@ -63,29 +63,41 @@ func runStartCmd(options *startOptions) runner.RunE {
 		_ []string,
 		di *wentsketchy.Wentsketchy,
 	) error {
-		di.Logger.InfoContext(ctx, "start: starting fifo", slog.String("path", options.fifo))
+		di.Logger.InfoContext(
+			ctx,
+			"start: starting fifo",
+			slog.String("path", options.fifo),
+		)
+
+		di.Config.SetFifoPath(options.fifo)
 
 		err := di.Fifo.Start(options.fifo)
 
 		if err != nil {
-			return fmt.Errorf("fifo: could not init %w", err)
+			return fmt.Errorf("start: could not start fifo %w", err)
 		}
 
 		di.Logger.InfoContext(ctx, "start: get aerospace tree")
 
 		di.RefreshAerospaceData()
 
+		di.Logger.InfoContext(ctx, "start: config init")
+
+		err = di.Config.Init(ctx)
+
+		if err != nil {
+			return fmt.Errorf("start: could not config init %w", err)
+		}
+
 		var wg sync.WaitGroup
 		wg.Add(2)
-		ch := make(chan error, 2)
 
+		var aggregateError error
 		go func() {
 			runServer(ctx, di, options.fifo, &wg)
 
 			if err != nil {
-				ch <- err
-
-				di.Logger.ErrorContext(ctx, "server: error", slog.Any("error", err))
+				aggregateError = errors.Join(aggregateError, fmt.Errorf("server: error. %w", err))
 			}
 		}()
 
@@ -93,23 +105,16 @@ func runStartCmd(options *startOptions) runner.RunE {
 			runJobs(ctx, di, &wg)
 
 			if err != nil {
-				ch <- err
-
-				di.Logger.ErrorContext(ctx, "jobs: error", slog.Any("error", err))
+				aggregateError = errors.Join(aggregateError, fmt.Errorf("jobs: error. %w", err))
 			}
 		}()
-
-		defer close(ch)
 
 		wg.Wait()
 
 		di.Logger.InfoContext(ctx, "start: shutdown complete")
 
-		var aggregateError error
-		for message := range ch {
-			if message != nil {
-				aggregateError = errors.Join(aggregateError, message)
-			}
+		if aggregateError != nil {
+			di.Logger.ErrorContext(ctx, "server: error", slog.Any("error", aggregateError))
 		}
 
 		return aggregateError

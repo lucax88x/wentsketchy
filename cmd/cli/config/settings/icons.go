@@ -1,17 +1,25 @@
 package settings
 
 const (
-	IconClock     = ""
-	IconChat      = "󱅱"
-	IconTerminal  = ""
-	IconCode      = ""
-	IconChrome    = ""
-	IconFinder    = ""
-	IconEmail     = "󰇰"
-	IconTools     = ""
-	IconDocuments = "󰧮"
+	IconApple           = ""
+	IconClock           = ""
+	IconChat            = "󱅱"
+	IconTerminal        = ""
+	IconCode            = ""
+	IconChrome          = ""
+	IconFinder          = ""
+	IconEmail           = "󰇰"
+	IconTools           = ""
+	IconDocuments       = "󰧮"
+	IconBattery100      = "􀛨"
+	IconBattery75       = "􀺸"
+	IconBattery50       = "􀺶"
+	IconBattery25       = "􀛩"
+	IconBattery0        = "􀛪"
+	IconBatteryCharging = "􀢋"
 )
 
+//nolint:gochecknoglobals // ok
 var WorkspaceIcons = map[string]string{
 	"1": IconChat,
 	"2": IconCode,

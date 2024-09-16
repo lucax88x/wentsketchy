@@ -7,14 +7,10 @@ import (
 
 func Defaults(batches [][]string) ([][]string, error) {
 	defaults := sketchybar.ItemOptions{
-		//   updates=when_shown
-		//   scroll_texts=on
-		//   padding_right="$PADDINGS"
-		//   padding_left="$PADDINGS"
-		// PaddingOptions: sketchybar.PaddingOptions{
-		// 	Right: 4,
-		// 	Left:  4,
-		// },
+		Padding: sketchybar.PaddingOptions{
+			Right: 4,
+			Left:  4,
+		},
 		Icon: sketchybar.ItemIconOptions{
 			ColorOptions: sketchybar.ColorOptions{
 				Color: settings.SketchybarSettings.IconColor,
@@ -47,12 +43,14 @@ func Defaults(batches [][]string) ([][]string, error) {
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
-			//   background.corner_radius=4
-			//   background.height=26
+			CornerRadius: 4,
+			Height:       26,
 			BorderOptions: sketchybar.BorderOptions{
 				Width: 2,
 			},
 		},
+		Updates:     "when_shown",
+		ScrollTexts: true,
 	}
 
 	batches = batch(batches, m(s("--default"), defaults.ToArgs()))

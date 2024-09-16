@@ -67,14 +67,21 @@ func initialize(ctx context.Context, di *Wentsketchy) error {
 		di.Logger,
 		di.Sketchybar,
 		items.WentsketchyItems{
-			Aerospace: items.AerospaceItem{AerospaceData: di.AerospaceData},
-			Calendar:  items.CalendarItem{},
-			FrontApp:  items.FrontAppItem{AerospaceData: di.AerospaceData},
+			MainIcon:  items.NewMainIconItem(),
+			Aerospace: items.NewAerospaceItem(di.AerospaceData),
+			Calendar:  items.NewCalendarItem(),
+			FrontApp:  items.NewFrontAppItem(di.AerospaceData),
+			Battery:   items.NewBatteryItem(di.Logger),
 		},
 	)
 
 	di.Fifo = fifo.NewFifoReader(di.Logger)
-	di.Server = server.NewFifoServer(di.Logger, di.Config, di.Fifo)
+	di.Server = server.NewFifoServer(
+		di.Logger,
+		di.Config,
+		di.Fifo,
+		di.AerospaceData,
+	)
 
 	return nil
 }

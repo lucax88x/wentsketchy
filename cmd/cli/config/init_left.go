@@ -7,7 +7,13 @@ import (
 func (cfg *Config) left(
 	batches [][]string,
 ) ([][]string, error) {
-	batches, err := cfg.items.Aerospace.Init(batches)
+	batches, err := cfg.items.MainIcon.Init(batches)
+
+	if err != nil {
+		return batches, fmt.Errorf("init aerospace %w", err)
+	}
+
+	batches, err = cfg.items.Aerospace.Init(batches)
 
 	if err != nil {
 		return batches, fmt.Errorf("init aerospace %w", err)

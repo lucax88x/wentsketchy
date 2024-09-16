@@ -3,7 +3,9 @@ package fifo
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -24,8 +26,11 @@ func makeSureFifoExists(path string) error {
 	_, err := os.Stat(path)
 
 	if err == nil {
-		// TODO: check if existing is fifo!
-		return nil
+		err = os.Remove(path)
+
+		if err != nil {
+			return fmt.Errorf("fifo: could not remove fifo. %w", err)
+		}
 	}
 
 	return syscall.Mkfifo(path, 0640)
@@ -71,6 +76,11 @@ func (f *Reader) Listen(
 		for continueReading {
 			line, readErr := reader.ReadBytes('\n')
 
+			if errors.Is(err, io.EOF) {
+				f.logger.ErrorContext(ctx, "fifo: got EOF")
+				break
+			}
+
 			if readErr != nil {
 				err = readErr
 				f.logger.ErrorContext(ctx, "fifo: readbytes err", slog.Any("error", err))
@@ -94,6 +104,13 @@ func (f *Reader) Listen(
 			if err != nil {
 				err = fmt.Errorf("fifo: could not close reader %w", err)
 			}
+
+			err = ensureClose(path)
+
+			if err != nil {
+				err = fmt.Errorf("fifo: could not close fifo with EOF %w", err)
+			}
+
 			return nil
 		case data := <-internalCh:
 			nline := string(data)
@@ -101,4 +118,26 @@ func (f *Reader) Listen(
 			ch <- nline
 		}
 	}
+}
+
+func ensureClose(path string) error {
+	// f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0640)
+	//
+	// if err != nil {
+	// 	return fmt.Errorf("fifo: error opening file to write EOF: %w", err)
+	// }
+	//
+	// _, err = f.WriteString("EOF")
+	//
+	// if err != nil {
+	// 	return fmt.Errorf("fifo: error while writing EOF: %w", err)
+	// }
+
+	err := os.Remove(path)
+
+	if err != nil {
+		return fmt.Errorf("fifo: could not remove fifo. %w", err)
+	}
+
+	return nil
 }

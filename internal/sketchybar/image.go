@@ -22,6 +22,8 @@ func (opts ImageOptions) ToArgs(parent *string) []string {
 
 	if opts.Drawing {
 		args = withParent(args, parent, "image.drawing=%s", "on")
+	} else {
+		args = withParent(args, parent, "image.drawing=%s", "off")
 	}
 
 	if opts.Scale != "" {

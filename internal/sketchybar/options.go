@@ -13,8 +13,9 @@ type ColorOptions struct {
 }
 
 type BorderOptions struct {
-	Width int
-	Color string
+	Width  int
+	Height int
+	Color  string
 }
 
 type FontOptions struct {
@@ -23,6 +24,7 @@ type FontOptions struct {
 	Size string
 }
 
+//nolint:gochecknoglobals // ok
 var EmptyFontOptions = FontOptions{}
 
 func (opts FontOptions) String() string {
@@ -61,6 +63,9 @@ func (opts BorderOptions) ToArgs(parent *string) []string {
 
 	if opts.Width != 0 {
 		args = withParent(args, parent, "border_width=%d", opts.Width)
+	}
+	if opts.Height != 0 {
+		args = withParent(args, parent, "border_height=%d", opts.Height)
 	}
 	if opts.Color != "" {
 		args = withParent(args, parent, "border_color=%s", opts.Color)
