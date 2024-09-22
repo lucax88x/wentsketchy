@@ -1,7 +1,13 @@
 package aerospace
 
 type Window struct {
-	ID    int
-	App   string
-	Title string
+	ID  WindowID
+	App string
+}
+
+type FullWindow struct {
+	ID          WindowID
+	App         string
+	WorkspaceID WorkspaceID
+	MonitorID   MonitorID
 }

@@ -12,11 +12,11 @@ func NewMainIconItem() MainIconItem {
 	return MainIconItem{}
 }
 
-const MainIconItemName = "mainIcon"
+const mainIconItemName = "mainIcon"
 
 func (i MainIconItem) Init(batches [][]string) ([][]string, error) {
 	mainIcon := sketchybar.ItemOptions{
-		Display: "active",
+		// Display: "active",
 		Icon: sketchybar.ItemIconOptions{
 			Value: settings.IconApple,
 			Font: sketchybar.FontOptions{
@@ -30,12 +30,8 @@ func (i MainIconItem) Init(batches [][]string) ([][]string, error) {
 		},
 	}
 
-	batches = batch(batches, s("--add", "item", MainIconItemName, "left"))
-	batches = batch(batches, m(s("--set", MainIconItemName), mainIcon.ToArgs()))
+	batches = batch(batches, s("--add", "item", mainIconItemName, "left"))
+	batches = batch(batches, m(s("--set", mainIconItemName), mainIcon.ToArgs()))
 
 	return batches, nil
-}
-
-func isMainIcon(name string) bool {
-	return name == MainIconItemName
 }

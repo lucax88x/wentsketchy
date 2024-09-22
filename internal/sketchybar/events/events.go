@@ -1,36 +1,23 @@
 package events
 
-import (
-	"strings"
-)
-
-type Event string
-
+// https://felixkratz.github.io/SketchyBar/config/events
 const (
-	FrontAppSwitched    Event = "front_app_switched"
-	SpaceWindowsChange  Event = "space_windows_change"
-	SpaceChange         Event = "space_change"
-	DisplayChange       Event = "display_change"
-	VolumeChange        Event = "volume_change"
-	BrightnessChange    Event = "brightness_change"
-	PowerSourceChanged  Event = "power_source_change"
-	WifiChange          Event = "wifi_change"
-	MediaChange         Event = "media_change"
-	SystemWillSleep     Event = "system_will_sleep"
-	SystemWoke          Event = "system_woke"
-	MouseEntered        Event = "mouse.entered"
-	MouseExited         Event = "mouse.exited"
-	MouseEnteredGlobal  Event = "mouse.entered.global"
-	MouseExitedGlobal   Event = "mouse.exited.global"
-	MouseClicked        Event = "mouse.clicked"
-	MouseScrolled       Event = "mouse.scrolled"
-	MouseScrolledGlobal Event = "mouse.scrolled.global"
+	FrontAppSwitched    string = "front_app_switched"
+	SpaceWindowsChange  string = "space_windows_change"
+	SpaceChange         string = "space_change"
+	DisplayChange       string = "display_change"
+	VolumeChange        string = "volume_change"
+	BrightnessChange    string = "brightness_change"
+	PowerSourceChanged  string = "power_source_change"
+	WifiChange          string = "wifi_change"
+	MediaChange         string = "media_change"
+	SystemWillSleep     string = "system_will_sleep"
+	SystemWoke          string = "system_woke"
+	MouseEntered        string = "mouse.entered"
+	MouseExited         string = "mouse.exited"
+	MouseEnteredGlobal  string = "mouse.entered.global"
+	MouseExitedGlobal   string = "mouse.exited.global"
+	MouseClicked        string = "mouse.clicked"
+	MouseScrolled       string = "mouse.scrolled"
+	MouseScrolledGlobal string = "mouse.scrolled.global"
 )
-
-func ToString(events ...Event) string {
-	casted := make([]string, len(events))
-	for i, event := range events {
-		casted[i] = string(event)
-	}
-	return strings.Join(casted, " ")
-}

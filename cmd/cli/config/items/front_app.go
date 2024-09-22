@@ -1,6 +1,7 @@
 package items
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -8,13 +9,14 @@ import (
 	"github.com/lucax88x/wentsketchy/internal/aerospace"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar/events"
+	"github.com/lucax88x/wentsketchy/internal/utils"
 )
 
 type FrontAppItem struct {
-	AerospaceData *aerospace.Data
+	Aerospace aerospace.Aerospace
 }
 
-func NewFrontAppItem(data *aerospace.Data) FrontAppItem {
+func NewFrontAppItem(data aerospace.Aerospace) FrontAppItem {
 	return FrontAppItem{data}
 }
 
@@ -45,20 +47,21 @@ func (i *FrontAppItem) Init(batches [][]string, fifoPath string) ([][]string, er
 
 	batches = batch(batches, s("--add", "item", frontAppItemName, "right"))
 	batches = batch(batches, m(s("--set", frontAppItemName), frontAppItem.ToArgs()))
-	batches = batch(batches, s("--subscribe", frontAppItemName, string(events.FrontAppSwitched)))
+	batches = batch(batches, s("--subscribe", frontAppItemName, events.FrontAppSwitched))
 
 	return batches, nil
 }
 
 func (i *FrontAppItem) Update(
+	ctx context.Context,
 	batches [][]string,
-	args *args.Args,
+	args *args.In,
 ) ([][]string, error) {
 	if !isFrontApp(args.Name) {
 		return batches, nil
 	}
 
-	if args.Event == string(events.FrontAppSwitched) {
+	if args.Event == events.FrontAppSwitched {
 		frontAppItem := sketchybar.ItemOptions{
 			Label: sketchybar.ItemLabelOptions{
 				Value: args.Info,
@@ -78,9 +81,9 @@ func (i *FrontAppItem) Update(
 
 		batches = batch(batches, m(s("--set", frontAppItemName), frontAppItem.ToArgs()))
 
-		windowsOfPrevWorkspace := i.AerospaceData.WindowsOfWorkspace(i.AerospaceData.PrevWorkspaceID)
+		tree := i.Aerospace.GetTree()
 
-		for _, window := range windowsOfPrevWorkspace {
+		for _, window := range tree.IndexedWindows {
 			windowItemID := fmt.Sprintf("window.%d", window.ID)
 
 			windowItem := sketchybar.ItemOptions{
@@ -92,14 +95,14 @@ func (i *FrontAppItem) Update(
 			batches = batch(batches, m(s("--set", windowItemID), windowItem.ToArgs()))
 		}
 
-		windowsOfFocusedWorkspace := i.AerospaceData.WindowsOfWorkspace(i.AerospaceData.FocusedWorkspaceID)
+		windowsOfFocusedWorkspace := i.Aerospace.WindowsOfWorkspace(i.Aerospace.GetFocusedWorkspaceID(ctx))
 
 		for _, window := range windowsOfFocusedWorkspace {
 			windowItemID := fmt.Sprintf("window.%d", window.ID)
 
 			windowItem := sketchybar.ItemOptions{
 				Icon: sketchybar.ItemIconOptions{
-					Highlight: window.App == args.Info,
+					Highlight: utils.Equals(window.App, args.Info),
 				},
 			}
 

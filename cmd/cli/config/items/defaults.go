@@ -43,11 +43,9 @@ func Defaults(batches [][]string) ([][]string, error) {
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
-			CornerRadius: 4,
-			Height:       26,
-			BorderOptions: sketchybar.BorderOptions{
-				Width: 2,
-			},
+			Drawing:      false,
+			CornerRadius: 0,
+			Height:       0,
 		},
 		Updates:     "when_shown",
 		ScrollTexts: true,

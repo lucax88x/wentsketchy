@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/lucax88x/wentsketchy/internal/fifo"
 )
 
 // https://felixkratz.github.io/SketchyBar/config/events
-type Args struct {
+type In struct {
 	// the item name
 	Name string `json:"name"`
 	// the event
@@ -18,15 +20,31 @@ type Args struct {
 	Modifier string `json:"modifier"`
 }
 
-func FromMsg(msg string) (*Args, error) {
-	msg, _ = strings.CutPrefix(msg, "update")
+// $INFO is a json, and its not easy to embed a json inside a json
+type Out struct {
+	Name     string `json:"name"`
+	Event    string `json:"event"`
+	Button   string `json:"button"`
+	Modifier string `json:"modifier"`
+}
 
-	var args *Args
-	err := json.Unmarshal([]byte(msg), &args)
+func FromEvent(msg string) (*In, error) {
+	// Find the positions of the fixed parts
+	argsStart := strings.Index(msg, "args: ") + len("args: ")
+	infoStart := strings.Index(msg, "info: ") + len("info: ")
+
+	// Extract the JSON substrings
+	argsJSON := msg[argsStart : infoStart-len(" info: ")]
+	infoJSON := msg[infoStart:]
+
+	var args *In
+	err := json.Unmarshal([]byte(argsJSON), &args)
 
 	if err != nil {
 		return nil, fmt.Errorf("args: could not deserialize data. %w", err)
 	}
+
+	args.Info = infoJSON
 
 	return args, nil
 }
@@ -36,10 +54,9 @@ func BuildEvent(path string) (string, error) {
 		return "", errors.New("args: path is empty")
 	}
 
-	data := &Args{
+	data := &Out{
 		Name:     "$NAME",
 		Event:    "$SENDER",
-		Info:     "$INFO",
 		Button:   "$BUTTON",
 		Modifier: "$MODIFIER",
 	}
@@ -52,5 +69,10 @@ func BuildEvent(path string) (string, error) {
 
 	serialized := strings.ReplaceAll(string(bytes), `"`, `\"`)
 
-	return fmt.Sprintf(`echo "update %s" > %s`, serialized, path), nil
+	return fmt.Sprintf(
+		`echo "update args: %s info: $INFO %c" > %s`,
+		serialized,
+		fifo.Separator,
+		path,
+	), nil
 }

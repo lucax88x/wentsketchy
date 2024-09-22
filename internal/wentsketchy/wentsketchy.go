@@ -21,9 +21,8 @@ type Wentsketchy struct {
 	Fifo                 *fifo.Reader
 	Server               *server.FifoServer
 	Sketchybar           sketchybar.API
-	RefreshAerospaceData func()
-	AerospaceData        *aerospace.Data
-	Aerospace            aerospace.Tree
+	Aerospace            aerospace.Aerospace
+	aerospaceTreeBuilder aerospace.TreeBuilder
 	aerospaceAPI         aerospace.API
 }
 
@@ -48,30 +47,22 @@ func NewWentsketchy(
 
 func initialize(ctx context.Context, di *Wentsketchy) error {
 	di.aerospaceAPI = aerospace.NewAPI(di.Logger)
-	di.Aerospace = aerospace.NewTree(di.Logger, di.aerospaceAPI)
-	di.AerospaceData = &aerospace.Data{}
-
-	di.RefreshAerospaceData = func() {
-		tree, err := di.Aerospace.Build()
-
-		if err != nil {
-			di.Logger.ErrorContext(ctx, "aerospace: could not refresh tree")
-			return
-		}
-
-		di.AerospaceData.Tree = tree
-	}
+	di.aerospaceTreeBuilder = aerospace.NewTreeBuilder(di.Logger, di.aerospaceAPI)
+	di.Aerospace = aerospace.New(di.Logger, di.aerospaceAPI, di.aerospaceTreeBuilder)
 
 	di.Sketchybar = sketchybar.NewAPI(di.Logger)
 	di.Config = config.NewConfig(
 		di.Logger,
 		di.Sketchybar,
 		items.WentsketchyItems{
-			MainIcon:  items.NewMainIconItem(),
-			Aerospace: items.NewAerospaceItem(di.AerospaceData),
-			Calendar:  items.NewCalendarItem(),
-			FrontApp:  items.NewFrontAppItem(di.AerospaceData),
-			Battery:   items.NewBatteryItem(di.Logger),
+			MainIcon: items.NewMainIconItem(),
+			Aerospace: items.NewAerospaceItem(
+				di.Aerospace,
+				di.Sketchybar,
+			),
+			Calendar: items.NewCalendarItem(),
+			FrontApp: items.NewFrontAppItem(di.Aerospace),
+			Battery:  items.NewBatteryItem(di.Logger),
 		},
 	)
 
@@ -80,7 +71,7 @@ func initialize(ctx context.Context, di *Wentsketchy) error {
 		di.Logger,
 		di.Config,
 		di.Fifo,
-		di.AerospaceData,
+		di.Aerospace,
 	)
 
 	return nil

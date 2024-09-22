@@ -19,7 +19,7 @@ func RefreshAerospaceData(
 		select {
 		case <-ticker.C:
 			di.Logger.InfoContext(ctx, "jobs: refreshing aerospace tree")
-			di.RefreshAerospaceData()
+			di.Aerospace.RefreshTree()
 		case <-ctx.Done():
 			di.Logger.InfoContext(ctx, "jobs: cancel")
 			return

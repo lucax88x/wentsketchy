@@ -77,9 +77,9 @@ func runStartCmd(options *startOptions) runner.RunE {
 			return fmt.Errorf("start: could not start fifo %w", err)
 		}
 
-		di.Logger.InfoContext(ctx, "start: get aerospace tree")
+		di.Logger.InfoContext(ctx, "start: refresh aerospace tree")
 
-		di.RefreshAerospaceData()
+		di.Aerospace.RefreshTree()
 
 		di.Logger.InfoContext(ctx, "start: config init")
 

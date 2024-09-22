@@ -12,6 +12,8 @@ import (
 	"syscall"
 )
 
+const Separator = '¬'
+
 type Reader struct {
 	logger *slog.Logger
 }
@@ -74,7 +76,7 @@ func (f *Reader) Listen(
 
 	go func() {
 		for continueReading {
-			line, readErr := reader.ReadBytes('\n')
+			line, readErr := reader.ReadBytes(Separator)
 
 			if errors.Is(err, io.EOF) {
 				f.logger.ErrorContext(ctx, "fifo: got EOF")
@@ -114,7 +116,8 @@ func (f *Reader) Listen(
 			return nil
 		case data := <-internalCh:
 			nline := string(data)
-			nline = strings.TrimRight(nline, "\r\n")
+			nline = strings.TrimRight(nline, string(Separator))
+			nline = strings.TrimLeft(nline, "\n")
 			ch <- nline
 		}
 	}

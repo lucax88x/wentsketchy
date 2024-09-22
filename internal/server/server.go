@@ -14,23 +14,23 @@ import (
 )
 
 type FifoServer struct {
-	logger        *slog.Logger
-	config        *config.Config
-	fifo          *fifo.Reader
-	aerospaceData *aerospace.Data
+	logger    *slog.Logger
+	config    *config.Config
+	fifo      *fifo.Reader
+	aerospace aerospace.Aerospace
 }
 
 func NewFifoServer(
 	logger *slog.Logger,
 	config *config.Config,
 	fifo *fifo.Reader,
-	aerospaceData *aerospace.Data,
+	aerospace aerospace.Aerospace,
 ) *FifoServer {
 	return &FifoServer{
 		logger,
 		config,
 		fifo,
-		aerospaceData,
+		aerospace,
 	}
 }
 
@@ -77,7 +77,7 @@ func (f FifoServer) handle(
 	}
 
 	if strings.HasPrefix(msg, "update") {
-		args, err := args.FromMsg(msg)
+		args, err := args.FromEvent(msg)
 
 		if err != nil {
 			f.logger.ErrorContext(ctx, "server: could not get args", slog.Any("err", err))
@@ -87,7 +87,9 @@ func (f FifoServer) handle(
 			ctx,
 			"server: react",
 			slog.String("event", "update"),
-			slog.Any("args", args),
+			slog.String("sender", args.Name),
+			slog.String("sender", args.Event),
+			// slog.Any("args", args),
 		)
 
 		err = f.config.Update(ctx, args)
@@ -121,8 +123,8 @@ func (f FifoServer) handle(
 			)
 		}
 
-		f.aerospaceData.SetPrevWorkspace(data.Prev)
-		f.aerospaceData.SetFocusedWorkspace(data.Focused)
+		f.aerospace.SetPrevWorkspaceID(data.Prev)
+		f.aerospace.SetFocusedWorkspaceID(data.Focused)
 
 		return
 	}

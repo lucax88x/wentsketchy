@@ -65,15 +65,14 @@ func (i CalendarItem) Init(
 
 	batches = batch(batches, s("--add", "item", calendarItemName, "right"))
 	batches = batch(batches, m(s("--set", calendarItemName), calendarItem.ToArgs()))
-	batches = batch(batches, s("--subscribe", calendarItemName, "system_woke"))
-	batches = batch(batches, s("--subscribe", calendarItemName, events.ToString(events.SystemWoke)))
+	batches = batch(batches, s("--subscribe", calendarItemName, events.SystemWoke))
 
 	return batches, nil
 }
 
 func (i CalendarItem) Update(
 	batches [][]string,
-	args *args.Args,
+	args *args.In,
 ) ([][]string, error) {
 	if !isCalendar(args.Name) {
 		return batches, nil

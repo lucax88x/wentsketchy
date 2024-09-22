@@ -13,7 +13,7 @@ func (cfg *Config) left(
 		return batches, fmt.Errorf("init aerospace %w", err)
 	}
 
-	batches, err = cfg.items.Aerospace.Init(batches)
+	batches, err = cfg.items.Aerospace.Init(batches, cfg.fifoPath)
 
 	if err != nil {
 		return batches, fmt.Errorf("init aerospace %w", err)

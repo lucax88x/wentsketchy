@@ -32,7 +32,7 @@ func (i BatteryItem) Init(
 		return batches, errors.New("battery: could not generate update event")
 	}
 
-	battery := sketchybar.ItemOptions{
+	batteryItem := sketchybar.ItemOptions{
 		Icon: sketchybar.ItemIconOptions{
 			Value: settings.IconClock,
 			Font: sketchybar.FontOptions{
@@ -66,18 +66,18 @@ func (i BatteryItem) Init(
 	}
 
 	batches = batch(batches, s("--add", "item", batteryItemName, "right"))
-	batches = batch(batches, m(s("--set", batteryItemName), battery.ToArgs()))
-	batches = batch(batches, s("--subscribe", batteryItemName, events.ToString(
+	batches = batch(batches, m(s("--set", batteryItemName), batteryItem.ToArgs()))
+	batches = batch(batches, s("--subscribe", batteryItemName,
 		events.PowerSourceChanged,
 		events.SystemWoke,
-	)))
+	))
 
 	return batches, nil
 }
 
 func (i BatteryItem) Update(
 	batches [][]string,
-	args *args.Args,
+	args *args.In,
 ) ([][]string, error) {
 	if !isBattery(args.Name) {
 		return batches, nil
