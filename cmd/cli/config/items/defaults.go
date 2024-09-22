@@ -7,12 +7,13 @@ import (
 
 func Defaults(batches [][]string) ([][]string, error) {
 	defaults := sketchybar.ItemOptions{
+		YOffset: 0,
 		Padding: sketchybar.PaddingOptions{
-			Right: 4,
-			Left:  4,
+			Right: 0,
+			Left:  0,
 		},
 		Icon: sketchybar.ItemIconOptions{
-			ColorOptions: sketchybar.ColorOptions{
+			Color: sketchybar.ColorOptions{
 				Color: settings.SketchybarSettings.IconColor,
 			},
 			Font: sketchybar.FontOptions{
@@ -20,35 +21,35 @@ func Defaults(batches [][]string) ([][]string, error) {
 				Kind: settings.SketchybarSettings.IconFontKind,
 				Size: settings.SketchybarSettings.IconFontSize,
 			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 4,
-				Left:  4,
-			},
 		},
 		Label: sketchybar.ItemLabelOptions{
-			ColorOptions: sketchybar.ColorOptions{
+			Color: sketchybar.ColorOptions{
 				Color: settings.SketchybarSettings.LabelColor,
 			},
-			//   label.shadow.drawing=on
-			//   label.shadow.distance=2
-			//   label.shadow.color=0xff000000
 			Font: sketchybar.FontOptions{
 				Font: settings.SketchybarSettings.LabelFont,
 				Kind: settings.SketchybarSettings.LabelFontKind,
-				Size: settings.SketchybarSettings.IconFontSize,
+				Size: settings.SketchybarSettings.LabelFontSize,
 			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 4,
-				Left:  4,
+			Padding: sketchybar.PaddingOptions{
+				Right: 0,
+				Left:  0,
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
-			Drawing:      false,
+			Drawing:      "on",
+			Height:       settings.SketchybarSettings.ItemHeight,
 			CornerRadius: 0,
-			Height:       0,
+			Color: sketchybar.ColorOptions{
+				Color: settings.SketchybarSettings.ItemBackgroundColor,
+			},
+			Padding: sketchybar.PaddingOptions{
+				Right: 0,
+				Left:  0,
+			},
 		},
-		Updates:     "when_shown",
-		ScrollTexts: true,
+		Updates:     "off",
+		ScrollTexts: "on",
 	}
 
 	batches = batch(batches, m(s("--default"), defaults.ToArgs()))

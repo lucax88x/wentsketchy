@@ -17,12 +17,14 @@ type API interface {
 }
 
 type realAPI struct {
-	logger *slog.Logger
+	logger  *slog.Logger
+	command *command.Command
 }
 
-func NewAPI(logger *slog.Logger) realAPI {
+func NewAPI(logger *slog.Logger, command *command.Command) realAPI {
 	return realAPI{
 		logger,
+		command,
 	}
 }
 
@@ -55,7 +57,7 @@ func (api realAPI) run(ctx context.Context, arg ...string) (string, error) {
 		return "", nil
 	}
 
-	out, err := command.Run("sketchybar", flattenAndFix(arg)...)
+	out, err := api.command.Run(ctx, "sketchybar", flattenAndFix(arg)...)
 
 	if err != nil {
 		api.logger.ErrorContext(ctx, out)

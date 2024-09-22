@@ -17,13 +17,16 @@ type Aerospace interface {
 	SetFocusedWorkspaceID(workspaceID string)
 	GetFocusedMonitorID(ctx context.Context) int
 	SetFocusedMonitorID(monitorID int)
+	GetFocusedApp() string
+	SetFocusedApp(app string)
 
 	RefreshTree()
 
-	FocusedMonitor() (MonitorID, error)
+	FocusedMonitor(ctx context.Context) (MonitorID, error)
 	WindowsOfWorkspace(workspaceID string) []*Window
-	WindowsOfFocusedWorkspace() (IndexedWindows, error)
-	WindowsOfFocusedMonitor() (IndexedWindows, error)
+	WindowsOfFocusedWorkspace(ctx context.Context) (IndexedWindows, error)
+	WindowsOfFocusedMonitor(ctx context.Context) (IndexedWindows, error)
+	FocusedWindow(ctx context.Context) (WindowID, error)
 }
 
 type Data struct {
@@ -35,6 +38,7 @@ type Data struct {
 	focusedWorkspaceID string
 	prevMonitorID      int
 	focusedMonitorID   int
+	focusedApp         string
 	tree               *Tree
 
 	debouncedRefreshTree func()
@@ -71,7 +75,7 @@ func (data *Data) GetPrevWorkspaceID() string {
 func (data *Data) GetFocusedWorkspaceID(ctx context.Context) string {
 	if data.focusedWorkspaceID == "" {
 		data.logger.InfoContext(ctx, "aerospace: no focused workspace, getting from aerospace")
-		focusedWorkspaceID, err := data.api.FocusedWorkspace()
+		focusedWorkspaceID, err := data.api.FocusedWorkspace(ctx)
 
 		if err != nil {
 			data.logger.ErrorContext(ctx, "aerospace: could not get focused workspace")
@@ -102,7 +106,7 @@ func (data *Data) SetFocusedMonitorID(monitorID int) {
 func (data *Data) GetFocusedMonitorID(ctx context.Context) int {
 	if data.focusedMonitorID == 0 {
 		data.logger.InfoContext(ctx, "aerospace: no focused monitor, getting from aerospace")
-		focusedMonitorID, err := data.api.FocusedMonitor()
+		focusedMonitorID, err := data.api.FocusedMonitor(ctx)
 
 		if err != nil {
 			data.logger.ErrorContext(ctx, "aerospace: could not get focused monitor")
@@ -115,8 +119,16 @@ func (data *Data) GetFocusedMonitorID(ctx context.Context) int {
 	return data.focusedMonitorID
 }
 
-func (data *Data) FocusedMonitor() (MonitorID, error) {
-	monitorID, err := data.api.FocusedMonitor()
+func (data *Data) SetFocusedApp(app string) {
+	data.focusedApp = app
+}
+
+func (data *Data) GetFocusedApp() string {
+	return data.focusedApp
+}
+
+func (data *Data) FocusedMonitor(ctx context.Context) (MonitorID, error) {
+	monitorID, err := data.api.FocusedMonitor(ctx)
 
 	if err != nil {
 		return 0, fmt.Errorf("aerospace: could not get focused monitor. %w", err)
@@ -125,8 +137,8 @@ func (data *Data) FocusedMonitor() (MonitorID, error) {
 	return monitorID, nil
 }
 
-func (data *Data) WindowsOfFocusedWorkspace() (IndexedWindows, error) {
-	windows, err := data.api.FocusedWorkspaceWindows()
+func (data *Data) WindowsOfFocusedWorkspace(ctx context.Context) (IndexedWindows, error) {
+	windows, err := data.api.FocusedWorkspaceWindows(ctx)
 
 	if err != nil {
 		return make(IndexedWindows, 0), fmt.Errorf("aerospace: could not get focused windows. %w", err)
@@ -135,8 +147,8 @@ func (data *Data) WindowsOfFocusedWorkspace() (IndexedWindows, error) {
 	return indexWindows(windows), nil
 }
 
-func (data *Data) WindowsOfFocusedMonitor() (IndexedWindows, error) {
-	windows, err := data.api.FocusedMonitorWindows()
+func (data *Data) WindowsOfFocusedMonitor(ctx context.Context) (IndexedWindows, error) {
+	windows, err := data.api.FocusedMonitorWindows(ctx)
 
 	if err != nil {
 		return make(IndexedWindows, 0), fmt.Errorf("aerospace: could not get focused windows. %w", err)
@@ -165,8 +177,20 @@ func (data *Data) WindowsOfWorkspace(workspaceID string) []*Window {
 	return windows
 }
 
+func (data *Data) FocusedWindow(ctx context.Context) (WindowID, error) {
+	windowID, err := data.api.FocusedWindow(ctx)
+
+	if err != nil {
+		return 0, fmt.Errorf("aerospace: could not get focused windows. %w", err)
+	}
+
+	return windowID, nil
+}
+
 func (data *Data) createDebouncedRefreshTree() {
 	refreshAerospaceData := func() {
+		ctx := context.Background()
+
 		start := time.Now()
 		defer func() {
 			elapsed := time.Since(start)
@@ -174,10 +198,10 @@ func (data *Data) createDebouncedRefreshTree() {
 		}()
 
 		data.logger.Info("aerospace: refreshing..")
-		tree, err := data.treeBuilder.Build()
+		tree, err := data.treeBuilder.Build(ctx)
 
 		if err != nil {
-			data.logger.Error("aerospace: could not refresh tree")
+			data.logger.Error("aerospace: could not refres tree")
 			return
 		}
 

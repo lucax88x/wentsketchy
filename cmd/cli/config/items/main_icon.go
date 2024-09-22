@@ -12,21 +12,20 @@ func NewMainIconItem() MainIconItem {
 	return MainIconItem{}
 }
 
-const mainIconItemName = "mainIcon"
+const mainIconItemName = "main_icon"
 
 func (i MainIconItem) Init(batches [][]string) ([][]string, error) {
 	mainIcon := sketchybar.ItemOptions{
-		// Display: "active",
+		Display: "active",
+		Padding: sketchybar.PaddingOptions{
+			Left:  settings.SketchybarSettings.ItemSpacing,
+			Right: 0,
+		},
 		Icon: sketchybar.ItemIconOptions{
 			Value: settings.IconApple,
-			Font: sketchybar.FontOptions{
-				Font: settings.FontIcon,
-				Kind: "Regular",
-				Size: "16.0",
-			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 8,
-			},
+		},
+		Background: sketchybar.BackgroundOptions{
+			Drawing: "off",
 		},
 	}
 

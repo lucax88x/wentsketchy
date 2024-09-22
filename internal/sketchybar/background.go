@@ -1,10 +1,11 @@
 package sketchybar
 
 type BackgroundOptions struct {
-	BorderOptions
-	ColorOptions
-	ImageOptions
-	Drawing      bool
+	Border       BorderOptions
+	Color        ColorOptions
+	Image        ImageOptions
+	Padding      PaddingOptions
+	Drawing      string
 	Width        int
 	Height       int
 	CornerRadius int
@@ -15,16 +16,14 @@ func (opts BackgroundOptions) ToArgs(parent *string) []string {
 
 	parentAndPrefix := mergeParentAndPrefix(parent, "background")
 
-	args = append(args, opts.ColorOptions.ToArgs(parentAndPrefix)...)
-	args = append(args, opts.BorderOptions.ToArgs(parentAndPrefix)...)
-	args = append(args, opts.ImageOptions.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Color.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Border.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Image.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Padding.ToArgs(parentAndPrefix)...)
 
-	if opts.Drawing {
-		args = withParent(args, parent, "background.drawing=%s", "on")
-	} else {
-		args = withParent(args, parent, "background.drawing=%s", "off")
+	if opts.Drawing != "" {
+		args = withParent(args, parent, "background.drawing=%s", opts.Drawing)
 	}
-
 	if opts.Width != 0 {
 		args = withParent(args, parent, "background.width=%d", opts.Width)
 	}

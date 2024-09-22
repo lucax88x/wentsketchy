@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/args"
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
 	"github.com/lucax88x/wentsketchy/internal/aerospace"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar/events"
@@ -22,7 +23,7 @@ func NewFrontAppItem(data aerospace.Aerospace) FrontAppItem {
 
 const frontAppItemName = "front_app"
 
-func (i *FrontAppItem) Init(batches [][]string, fifoPath string) ([][]string, error) {
+func (i *FrontAppItem) Init(batches batches, fifoPath string) (batches, error) {
 	updateEvent, err := args.BuildEvent(fifoPath)
 
 	if err != nil {
@@ -31,13 +32,29 @@ func (i *FrontAppItem) Init(batches [][]string, fifoPath string) ([][]string, er
 
 	frontAppItem := sketchybar.ItemOptions{
 		Display: "active",
+		Padding: sketchybar.PaddingOptions{
+			Left:  settings.SketchybarSettings.ItemSpacing,
+			Right: settings.SketchybarSettings.ItemSpacing,
+		},
 		Background: sketchybar.BackgroundOptions{
-			Drawing: true,
+			CornerRadius: settings.SketchybarSettings.ItemRadius,
 		},
 		Icon: sketchybar.ItemIconOptions{
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 5,
+			Background: sketchybar.BackgroundOptions{
+				Drawing: "on",
+				Image: sketchybar.ImageOptions{
+					Drawing: "on",
+					Padding: sketchybar.PaddingOptions{
+						Left:  settings.SketchybarSettings.IconPadding,
+						Right: settings.SketchybarSettings.IconPadding / 2,
+					},
+				},
+			},
+		},
+		Label: sketchybar.ItemLabelOptions{
+			Padding: sketchybar.PaddingOptions{
 				Left:  0,
+				Right: settings.SketchybarSettings.IconPadding,
 			},
 		},
 		Updates:     "on",
@@ -54,26 +71,25 @@ func (i *FrontAppItem) Init(batches [][]string, fifoPath string) ([][]string, er
 
 func (i *FrontAppItem) Update(
 	ctx context.Context,
-	batches [][]string,
+	batches batches,
 	args *args.In,
-) ([][]string, error) {
+) (batches, error) {
 	if !isFrontApp(args.Name) {
 		return batches, nil
 	}
 
 	if args.Event == events.FrontAppSwitched {
+		i.Aerospace.SetFocusedApp(args.Info)
+
 		frontAppItem := sketchybar.ItemOptions{
 			Label: sketchybar.ItemLabelOptions{
 				Value: args.Info,
 			},
-
 			Icon: sketchybar.ItemIconOptions{
-				BackgroundOptions: sketchybar.BackgroundOptions{
-					Drawing: true,
-					ImageOptions: sketchybar.ImageOptions{
-						Value:   fmt.Sprintf("app.%s", args.Info),
-						Drawing: true,
-						Scale:   "0.8",
+				Background: sketchybar.BackgroundOptions{
+					Image: sketchybar.ImageOptions{
+						Value: fmt.Sprintf("app.%s", args.Info),
+						Scale: "0.8",
 					},
 				},
 			},
@@ -83,34 +99,54 @@ func (i *FrontAppItem) Update(
 
 		tree := i.Aerospace.GetTree()
 
-		for _, window := range tree.IndexedWindows {
-			windowItemID := fmt.Sprintf("window.%d", window.ID)
-
-			windowItem := sketchybar.ItemOptions{
-				Icon: sketchybar.ItemIconOptions{
-					Highlight: false,
-				},
-			}
-
-			batches = batch(batches, m(s("--set", windowItemID), windowItem.ToArgs()))
-		}
-
-		windowsOfFocusedWorkspace := i.Aerospace.WindowsOfWorkspace(i.Aerospace.GetFocusedWorkspaceID(ctx))
-
-		for _, window := range windowsOfFocusedWorkspace {
-			windowItemID := fmt.Sprintf("window.%d", window.ID)
-
-			windowItem := sketchybar.ItemOptions{
-				Icon: sketchybar.ItemIconOptions{
-					Highlight: utils.Equals(window.App, args.Info),
-				},
-			}
-
-			batches = batch(batches, m(s("--set", windowItemID), windowItem.ToArgs()))
-		}
+		batches = i.removeAllHighlights(batches, tree)
+		batches = i.highlightWindows(ctx, batches, args.Info)
 	}
 
 	return batches, nil
+}
+
+func (i *FrontAppItem) removeAllHighlights(batches batches, tree *aerospace.Tree) batches {
+	for _, window := range tree.IndexedWindows {
+		windowItemID := fmt.Sprintf("window.%d", window.ID)
+
+		windowItem := sketchybar.ItemOptions{
+			Background: sketchybar.BackgroundOptions{
+				Color: sketchybar.ColorOptions{
+					Color: settings.SketchybarSettings.ItemBackgroundColor,
+				},
+			},
+		}
+
+		batches = batch(batches, m(s("--set", windowItemID), windowItem.ToArgs()))
+	}
+
+	return batches
+}
+
+func (i *FrontAppItem) highlightWindows(ctx context.Context, batches batches, app string) batches {
+	windowsOfFocusedWorkspace := i.Aerospace.WindowsOfWorkspace(i.Aerospace.GetFocusedWorkspaceID(ctx))
+
+	for _, window := range windowsOfFocusedWorkspace {
+		windowItemID := fmt.Sprintf("window.%d", window.ID)
+
+		backgroundColor := settings.SketchybarSettings.ItemBackgroundColor
+		if utils.Equals(window.App, app) {
+			backgroundColor = settings.SketchybarSettings.AerospaceItemFocusedBackgroundColor
+		}
+
+		windowItem := sketchybar.ItemOptions{
+			Background: sketchybar.BackgroundOptions{
+				Color: sketchybar.ColorOptions{
+					Color: backgroundColor,
+				},
+			},
+		}
+
+		batches = batch(batches, m(s("--set", windowItemID), windowItem.ToArgs()))
+	}
+
+	return batches
 }
 
 func isFrontApp(name string) bool {

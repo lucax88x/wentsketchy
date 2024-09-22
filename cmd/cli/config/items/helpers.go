@@ -1,6 +1,8 @@
 package items
 
-func batch(arr [][]string, args []string) [][]string {
+type batches = [][]string
+
+func batch(arr batches, args []string) batches {
 	return append(arr, args)
 }
 

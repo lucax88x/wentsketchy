@@ -9,6 +9,7 @@ import (
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/items"
 	"github.com/lucax88x/wentsketchy/internal/aerospace"
 	"github.com/lucax88x/wentsketchy/internal/clock"
+	"github.com/lucax88x/wentsketchy/internal/command"
 	"github.com/lucax88x/wentsketchy/internal/fifo"
 	"github.com/lucax88x/wentsketchy/internal/server"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
@@ -24,6 +25,7 @@ type Wentsketchy struct {
 	Aerospace            aerospace.Aerospace
 	aerospaceTreeBuilder aerospace.TreeBuilder
 	aerospaceAPI         aerospace.API
+	command              *command.Command
 }
 
 func NewWentsketchy(
@@ -46,11 +48,12 @@ func NewWentsketchy(
 }
 
 func initialize(ctx context.Context, di *Wentsketchy) error {
-	di.aerospaceAPI = aerospace.NewAPI(di.Logger)
+	di.command = command.NewCommand(di.Logger)
+	di.aerospaceAPI = aerospace.NewAPI(di.Logger, di.command)
 	di.aerospaceTreeBuilder = aerospace.NewTreeBuilder(di.Logger, di.aerospaceAPI)
 	di.Aerospace = aerospace.New(di.Logger, di.aerospaceAPI, di.aerospaceTreeBuilder)
 
-	di.Sketchybar = sketchybar.NewAPI(di.Logger)
+	di.Sketchybar = sketchybar.NewAPI(di.Logger, di.command)
 	di.Config = config.NewConfig(
 		di.Logger,
 		di.Sketchybar,

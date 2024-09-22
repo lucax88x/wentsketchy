@@ -21,9 +21,9 @@ func NewCalendarItem() CalendarItem {
 const calendarItemName = "calendar"
 
 func (i CalendarItem) Init(
-	batches [][]string,
+	batches batches,
 	fifoPath string,
-) ([][]string, error) {
+) (batches, error) {
 	updateEvent, err := args.BuildEvent(fifoPath)
 
 	if err != nil {
@@ -31,31 +31,24 @@ func (i CalendarItem) Init(
 	}
 
 	calendarItem := sketchybar.ItemOptions{
+		Padding: sketchybar.PaddingOptions{
+			Left:  settings.SketchybarSettings.ItemSpacing,
+			Right: settings.SketchybarSettings.ItemSpacing,
+		},
 		Icon: sketchybar.ItemIconOptions{
 			Value: settings.IconClock,
-			Font: sketchybar.FontOptions{
-				Font: settings.FontIcon,
-				Kind: "Regular",
-				Size: "12.0",
-			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 5,
-				Left:  5,
-			},
-		},
-		Label: sketchybar.ItemLabelOptions{
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 5,
-				Left:  5,
+			Padding: sketchybar.PaddingOptions{
+				Left:  settings.SketchybarSettings.IconPadding,
+				Right: settings.SketchybarSettings.IconPadding / 2,
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
-			BorderOptions: sketchybar.BorderOptions{
-				Width: 2,
-				Color: settings.ColorBackground1,
-			},
-			ColorOptions: sketchybar.ColorOptions{
-				Color: settings.ColorBackground1,
+			CornerRadius: settings.SketchybarSettings.ItemRadius,
+		},
+		Label: sketchybar.ItemLabelOptions{
+			Padding: sketchybar.PaddingOptions{
+				Left:  0,
+				Right: settings.SketchybarSettings.IconPadding,
 			},
 		},
 		UpdateFreq: 30,
@@ -71,9 +64,9 @@ func (i CalendarItem) Init(
 }
 
 func (i CalendarItem) Update(
-	batches [][]string,
+	batches batches,
 	args *args.In,
-) ([][]string, error) {
+) (batches, error) {
 	if !isCalendar(args.Name) {
 		return batches, nil
 	}

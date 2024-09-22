@@ -1,21 +1,27 @@
 package items
 
 import (
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 )
 
 func Bar(batches [][]string) ([][]string, error) {
 	bar := sketchybar.BarOptions{
 		Position: "top",
-		Height:   45,
-		Shadow:   false,
-		Sticky:   true,
-		PaddingOptions: sketchybar.PaddingOptions{
-			Right: 10,
-			Left:  10,
+		Height:   settings.SketchybarSettings.BarHeight,
+		Margin:   settings.SketchybarSettings.BarMargin,
+		YOffset:  0,
+		Padding: sketchybar.PaddingOptions{
+			Right: 8,
+			Left:  8,
 		},
-		YOffset: -5,
-		Topmost: "window",
+		Topmost:       "off",
+		Sticky:        "on",
+		Shadow:        "off",
+		FontSmoothing: "on",
+		Color: sketchybar.ColorOptions{
+			Color: settings.SketchybarSettings.BarBackgroundColor,
+		},
 	}
 
 	batches = batch(batches, m(s("--bar"), bar.ToArgs()))

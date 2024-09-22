@@ -1,6 +1,7 @@
 package aerospace
 
 import (
+	"context"
 	"log/slog"
 	"sort"
 	"strconv"
@@ -8,7 +9,7 @@ import (
 
 type TreeBuilder interface {
 	// Workspace id is ordered because of numbers, but windows cannot be ordered
-	Build() (*Tree, error)
+	Build(ctx context.Context) (*Tree, error)
 }
 
 type realTreeBuilder struct {
@@ -23,8 +24,8 @@ func NewTreeBuilder(logger *slog.Logger, api API) TreeBuilder {
 	}
 }
 
-func (t realTreeBuilder) Build() (*Tree, error) {
-	fullWindows, err := t.api.FullWindows()
+func (t realTreeBuilder) Build(ctx context.Context) (*Tree, error) {
+	fullWindows, err := t.api.FullWindows(ctx)
 
 	if err != nil {
 		return nil, err

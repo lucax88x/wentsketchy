@@ -1,21 +1,21 @@
 package sketchybar
 
 type ItemIconOptions struct {
-	PaddingOptions
-	ColorOptions
-	BackgroundOptions
-	Value     string
-	Font      FontOptions
-	Highlight bool
+	Padding    PaddingOptions
+	Color      ColorOptions
+	Background BackgroundOptions
+	Value      string
+	Font       FontOptions
+	Highlight  string
 }
 
 func (opts ItemIconOptions) ToArgs() []string {
 	args := []string{}
 
 	parent := "icon"
-	args = append(args, opts.PaddingOptions.ToArgs(&parent)...)
-	args = append(args, opts.ColorOptions.ToArgs(&parent)...)
-	args = append(args, opts.BackgroundOptions.ToArgs(&parent)...)
+	args = append(args, opts.Padding.ToArgs(&parent)...)
+	args = append(args, opts.Color.ToArgs(&parent)...)
+	args = append(args, opts.Background.ToArgs(&parent)...)
 
 	if opts.Value != "" {
 		args = with(args, "icon=%s", opts.Value)
@@ -25,21 +25,19 @@ func (opts ItemIconOptions) ToArgs() []string {
 		args = with(args, "icon.font=%s", opts.Font.String())
 	}
 
-	if opts.Highlight {
-		args = with(args, "icon.highlight=%s", "on")
-	} else {
-		args = with(args, "icon.highlight=%s", "off")
+	if opts.Highlight != "" {
+		args = with(args, "icon.highlight=%s", opts.Highlight)
 	}
 
 	return args
 }
 
 type ItemLabelOptions struct {
-	PaddingOptions
-	ColorOptions
+	Padding   PaddingOptions
+	Color     ColorOptions
 	Value     string
 	Font      FontOptions
-	Highlight bool
+	Highlight string
 }
 
 func (opts ItemLabelOptions) ToArgs() []string {
@@ -47,8 +45,8 @@ func (opts ItemLabelOptions) ToArgs() []string {
 
 	parent := "label"
 
-	args = append(args, opts.PaddingOptions.ToArgs(&parent)...)
-	args = append(args, opts.ColorOptions.ToArgs(&parent)...)
+	args = append(args, opts.Padding.ToArgs(&parent)...)
+	args = append(args, opts.Color.ToArgs(&parent)...)
 
 	if opts.Value != "" {
 		args = with(args, "label=%s", opts.Value)
@@ -56,12 +54,9 @@ func (opts ItemLabelOptions) ToArgs() []string {
 	if opts.Font != EmptyFontOptions {
 		args = with(args, "label.font=%s", opts.Font.String())
 	}
-	if opts.Highlight {
-		args = with(args, "icon.highlight=%s", "on")
-	} else {
-		args = with(args, "icon.highlight=%s", "off")
+	if opts.Highlight != "" {
+		args = with(args, "icon.highlight=%s", opts.Highlight)
 	}
-
 	return args
 }
 
@@ -73,9 +68,10 @@ type ItemOptions struct {
 	Padding     PaddingOptions
 	Display     string
 	Space       string
+	YOffset     int
 	UpdateFreq  int
 	Updates     string
-	ScrollTexts bool
+	ScrollTexts string
 	Script      string
 	ClickScript string
 }
@@ -95,16 +91,17 @@ func (opts ItemOptions) ToArgs() []string {
 	if opts.Space != "" {
 		args = with(args, "space=%s", opts.Space)
 	}
+	if opts.YOffset != 0 {
+		args = with(args, "y_offset=%d", opts.YOffset)
+	}
 	if opts.UpdateFreq != 0 {
 		args = with(args, "update_freq=%d", opts.UpdateFreq)
 	}
 	if opts.Updates != "" {
 		args = with(args, "updates=%s", opts.Updates)
 	}
-	if opts.ScrollTexts {
-		args = with(args, "scroll_texts=%s", "on")
-	} else {
-		args = with(args, "scroll_texts=%s", "off")
+	if opts.ScrollTexts != "" {
+		args = with(args, "scroll_texts=%s", opts.ScrollTexts)
 	}
 	if opts.Script != "" {
 		args = with(args, "script=%s", opts.Script)

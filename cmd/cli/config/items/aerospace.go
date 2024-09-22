@@ -9,9 +9,11 @@ import (
 
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/args"
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings/colors"
 	"github.com/lucax88x/wentsketchy/internal/aerospace"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar/events"
+	"github.com/lucax88x/wentsketchy/internal/utils"
 )
 
 type AerospaceItem struct {
@@ -34,10 +36,10 @@ const spaceItemPrefix = "workspace"
 const windowItemPrefix = "window"
 
 func (i AerospaceItem) Init(
-	batches [][]string,
+	batches batches,
 	fifoPath string,
-) ([][]string, error) {
-	batches, err := applyTree(batches, i.aerospace.GetTree())
+) (batches, error) {
+	batches, err := i.applyTree(batches)
 
 	if err != nil {
 		return batches, err
@@ -54,9 +56,9 @@ func (i AerospaceItem) Init(
 
 func (i AerospaceItem) Update(
 	ctx context.Context,
-	batches [][]string,
+	batches batches,
 	args *args.In,
-) ([][]string, error) {
+) (batches, error) {
 	if !isAerospace(args.Name) {
 		return batches, nil
 	}
@@ -90,33 +92,34 @@ func workspaceToSketchybar(
 	return &sketchybar.ItemOptions{
 		// Space:   workspaceID,
 		Display: strconv.Itoa(monitorID),
-		Background: sketchybar.BackgroundOptions{
-			Drawing:      true,
-			ColorOptions: sketchybar.ColorOptions{Color: settings.ColorBlue},
-			CornerRadius: 10,
+		Padding: sketchybar.PaddingOptions{
+			Left:  settings.SketchybarSettings.ItemSpacing,
+			Right: 0,
 		},
-		// Border: sketchybar.BorderOptions{
-		// 	Color:  settings.ColorBlue,
-		// 	Width:  10,
-		// 	Height: 10,
-		// },
+		Background: sketchybar.BackgroundOptions{
+			CornerRadius: 0,
+			// BorderOptions: sketchybar.BorderOptions{
+			// 	Color: colors-Red,
+			// 	Width: 10,
+			// },
+		},
 		Icon: sketchybar.ItemIconOptions{
 			Value: icon,
-			Font: sketchybar.FontOptions{
-				Font: settings.FontIcon,
-				Kind: "Regular",
-				Size: "12.0",
+			Color: sketchybar.ColorOptions{
+				Color: colors.White,
 			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 4,
-				Left:  4,
+			Padding: sketchybar.PaddingOptions{
+				Left:  settings.SketchybarSettings.IconPadding,
+				Right: settings.SketchybarSettings.IconPadding,
 			},
 		},
+		ClickScript: fmt.Sprintf(`aerospace workspace "%s"`, workspaceID),
 	}, nil
 }
 
-func windowToSketchybar(
+func (i *AerospaceItem) windowToSketchybar(
 	monitorID int,
+	workspaceID string,
 	window *aerospace.Window,
 ) (*sketchybar.ItemOptions, error) {
 	icon, hasIcon := settings.AppIcons[window.App]
@@ -125,39 +128,37 @@ func windowToSketchybar(
 		return nil, fmt.Errorf("could not find icon for app %s", window.App)
 	}
 
-	return &sketchybar.ItemOptions{
+	itemOptions := &sketchybar.ItemOptions{
 		Display: strconv.Itoa(monitorID),
-		//   padding_left=1
-		//   padding_right=1
+		Background: sketchybar.BackgroundOptions{
+			CornerRadius: 0,
+		},
 		Icon: sketchybar.ItemIconOptions{
-			ColorOptions: sketchybar.ColorOptions{
-				Color:          settings.ColorWhite,
-				HighlightColor: settings.ColorRed,
+			Color: sketchybar.ColorOptions{
+				Color:          colors.White,
+				HighlightColor: colors.White,
 			},
 			Font: sketchybar.FontOptions{
 				Font: settings.FontAppIcon,
 				Kind: "Regular",
 				Size: "14.0",
 			},
-			//   icon.highlight_color="$RED"
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 4,
-				Left:  4,
+			Padding: sketchybar.PaddingOptions{
+				Left:  settings.SketchybarSettings.IconPadding,
+				Right: settings.SketchybarSettings.IconPadding,
 			},
-			Value:     icon,
-			Highlight: false,
+			Value: icon,
 		},
-		Background: sketchybar.BackgroundOptions{
-			//   background.drawing="on"
-			BorderOptions: sketchybar.BorderOptions{
-				Color: settings.ColorBackground2,
-			},
-			ColorOptions: sketchybar.ColorOptions{
-				Color: settings.ColorBackground1,
-			},
-		},
-		//   script="$PLUGIN_DIR/space.sh"
-	}, nil
+		ClickScript: fmt.Sprintf(`aerospace workspace "%s"`, workspaceID),
+	}
+
+	if utils.Equals(window.App, i.aerospace.GetFocusedApp()) {
+		itemOptions.Background.Color = sketchybar.ColorOptions{
+			Color: settings.SketchybarSettings.AerospaceItemFocusedBackgroundColor,
+		}
+	}
+
+	return itemOptions, nil
 }
 
 func sketchybarSpaceID(spaceID string) string {
@@ -168,13 +169,15 @@ func sketchybarWindowID(window *aerospace.Window) string {
 	return fmt.Sprintf("%s.%d", windowItemPrefix, window.ID)
 }
 
-func addWindowToSketchybar(
-	batches [][]string,
+func (i *AerospaceItem) addWindowToSketchybar(
+	batches batches,
 	monitorID int,
+	workspaceID string,
 	window *aerospace.Window,
-) ([][]string, error) {
-	windowItem, err := windowToSketchybar(
+) (batches, error) {
+	windowItem, err := i.windowToSketchybar(
 		monitorID,
+		workspaceID,
 		window,
 	)
 
@@ -188,7 +191,7 @@ func addWindowToSketchybar(
 	return batches, err
 }
 
-func checker(batches [][]string, fifoPath string) ([][]string, error) {
+func checker(batches batches, fifoPath string) (batches, error) {
 	updateEvent, err := args.BuildEvent(fifoPath)
 
 	if err != nil {
@@ -197,7 +200,7 @@ func checker(batches [][]string, fifoPath string) ([][]string, error) {
 
 	checkerItem := sketchybar.ItemOptions{
 		Background: sketchybar.BackgroundOptions{
-			Drawing: false,
+			Drawing: "off",
 		},
 		Updates: "on",
 		Script:  updateEvent,
@@ -216,9 +219,9 @@ func checker(batches [][]string, fifoPath string) ([][]string, error) {
 
 func (i AerospaceItem) handleSpaceWindowsChange(
 	ctx context.Context,
-	batches [][]string,
-) ([][]string, error) {
-	indexedWindows, err := i.aerospace.WindowsOfFocusedMonitor()
+	batches batches,
+) (batches, error) {
+	indexedWindows, err := i.aerospace.WindowsOfFocusedMonitor(ctx)
 
 	if err != nil {
 		return batches, fmt.Errorf("aerospace: cannot query aerospace windows. %w", err)
@@ -256,16 +259,17 @@ func (i AerospaceItem) handleSpaceWindowsChange(
 	}
 
 	focusedMonitorID := i.aerospace.GetFocusedMonitorID(ctx)
-	focusedSpaceID := sketchybarSpaceID(i.aerospace.GetFocusedWorkspaceID(ctx))
+	focusedSpaceID := i.aerospace.GetFocusedWorkspaceID(ctx)
+	focusedSketchybarSpaceID := sketchybarSpaceID(focusedSpaceID)
 
 	for _, window := range indexedWindows {
 		_, found := alreadyThereWindows[window.ID]
 		if !found {
-			batches, err = addWindowToSketchybar(batches, focusedMonitorID, window)
+			batches, err = i.addWindowToSketchybar(batches, focusedMonitorID, focusedSpaceID, window)
 
 			windowID := sketchybarWindowID(window)
 
-			batches = batch(batches, s("--move", windowID, "after", focusedSpaceID))
+			batches = batch(batches, s("--move", windowID, "after", focusedSketchybarSpaceID))
 
 			if err != nil {
 				return batches, fmt.Errorf(
@@ -280,16 +284,13 @@ func (i AerospaceItem) handleSpaceWindowsChange(
 	return batches, nil
 }
 
-func (i AerospaceItem) handleSpaceWindowsChange2(
-	ctx context.Context,
-	batches [][]string,
-) ([][]string, error) {
+func (i AerospaceItem) handleSpaceWindowsChange2(ctx context.Context, batches batches) (batches, error) {
 	i.aerospace.RefreshTree()
 
 	batches = batch(batches, s("--remove", fmt.Sprintf("/%s/", spaceItemPrefix)))
 	batches = batch(batches, s("--remove", fmt.Sprintf("/%s/", windowItemPrefix)))
 
-	batches, err := applyTree(batches, i.aerospace.GetTree())
+	batches, err := i.applyTree(batches)
 
 	if err != nil {
 		return batches, err
@@ -298,7 +299,9 @@ func (i AerospaceItem) handleSpaceWindowsChange2(
 	return batches, nil
 }
 
-func applyTree(batches [][]string, tree *aerospace.Tree) ([][]string, error) {
+func (i *AerospaceItem) applyTree(batches batches) (batches, error) {
+	tree := i.aerospace.GetTree()
+
 	var aggregatedErr error
 	for _, monitor := range tree.Monitors {
 		for _, workspace := range monitor.Workspaces {
@@ -316,7 +319,12 @@ func applyTree(batches [][]string, tree *aerospace.Tree) ([][]string, error) {
 			for _, windowID := range workspace.Windows {
 				window := tree.IndexedWindows[windowID]
 
-				batches, err = addWindowToSketchybar(batches, monitor.Monitor, window)
+				batches, err = i.addWindowToSketchybar(
+					batches,
+					monitor.Monitor,
+					workspace.Workspace,
+					window,
+				)
 
 				if err != nil {
 					aggregatedErr = errors.Join(aggregatedErr, err)

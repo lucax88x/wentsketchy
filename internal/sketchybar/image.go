@@ -1,10 +1,12 @@
 package sketchybar
 
 type ImageOptions struct {
-	BorderOptions
-	ColorOptions
+	Border  BorderOptions
+	Color   ColorOptions
+	Padding PaddingOptions
+
 	Value   string
-	Drawing bool
+	Drawing string
 	Scale   string
 }
 
@@ -13,17 +15,16 @@ func (opts ImageOptions) ToArgs(parent *string) []string {
 
 	parentAndPrefix := mergeParentAndPrefix(parent, "image")
 
-	args = append(args, opts.ColorOptions.ToArgs(parentAndPrefix)...)
-	args = append(args, opts.BorderOptions.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Border.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Color.ToArgs(parentAndPrefix)...)
+	args = append(args, opts.Padding.ToArgs(parentAndPrefix)...)
 
 	if opts.Value != "" {
 		args = withParent(args, parent, "image=%s", opts.Value)
 	}
 
-	if opts.Drawing {
-		args = withParent(args, parent, "image.drawing=%s", "on")
-	} else {
-		args = withParent(args, parent, "image.drawing=%s", "off")
+	if opts.Drawing != "" {
+		args = withParent(args, parent, "image.drawing=%s", opts.Drawing)
 	}
 
 	if opts.Scale != "" {

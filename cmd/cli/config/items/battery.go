@@ -8,6 +8,7 @@ import (
 	"github.com/distatus/battery"
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/args"
 	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings/colors"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar"
 	"github.com/lucax88x/wentsketchy/internal/sketchybar/events"
 )
@@ -23,9 +24,9 @@ func NewBatteryItem(logger *slog.Logger) BatteryItem {
 const batteryItemName = "battery"
 
 func (i BatteryItem) Init(
-	batches [][]string,
+	batches batches,
 	fifoPath string,
-) ([][]string, error) {
+) (batches, error) {
 	updateEvent, err := args.BuildEvent(fifoPath)
 
 	if err != nil {
@@ -33,31 +34,27 @@ func (i BatteryItem) Init(
 	}
 
 	batteryItem := sketchybar.ItemOptions{
+		Padding: sketchybar.PaddingOptions{
+			Left:  settings.SketchybarSettings.ItemSpacing,
+			Right: settings.SketchybarSettings.ItemSpacing,
+		},
+		Background: sketchybar.BackgroundOptions{
+			CornerRadius: settings.SketchybarSettings.ItemRadius,
+		},
 		Icon: sketchybar.ItemIconOptions{
 			Value: settings.IconClock,
 			Font: sketchybar.FontOptions{
 				Font: settings.FontIcon,
-				Kind: "Regular",
-				Size: "12.0",
 			},
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 5,
-				Left:  5,
+			Padding: sketchybar.PaddingOptions{
+				Left:  settings.SketchybarSettings.IconPadding,
+				Right: settings.SketchybarSettings.IconPadding / 2,
 			},
 		},
 		Label: sketchybar.ItemLabelOptions{
-			PaddingOptions: sketchybar.PaddingOptions{
-				Right: 5,
-				Left:  5,
-			},
-		},
-		Background: sketchybar.BackgroundOptions{
-			BorderOptions: sketchybar.BorderOptions{
-				Width: 2,
-				Color: settings.ColorBackground1,
-			},
-			ColorOptions: sketchybar.ColorOptions{
-				Color: settings.ColorBackground1,
+			Padding: sketchybar.PaddingOptions{
+				Left:  0,
+				Right: settings.SketchybarSettings.IconPadding,
 			},
 		},
 		UpdateFreq: 120,
@@ -76,9 +73,9 @@ func (i BatteryItem) Init(
 }
 
 func (i BatteryItem) Update(
-	batches [][]string,
+	batches batches,
 	args *args.In,
-) ([][]string, error) {
+) (batches, error) {
 	if !isBattery(args.Name) {
 		return batches, nil
 	}
@@ -109,7 +106,7 @@ func (i BatteryItem) Update(
 	batteryItem := sketchybar.ItemOptions{
 		Icon: sketchybar.ItemIconOptions{
 			Value: icon,
-			ColorOptions: sketchybar.ColorOptions{
+			Color: sketchybar.ColorOptions{
 				Color: color,
 			},
 		},
@@ -130,15 +127,15 @@ func isBattery(name string) bool {
 func getBatteryStatus(percentage float64) (string, string) {
 	switch {
 	case percentage >= 80 && percentage <= 100:
-		return settings.IconBattery100, settings.ColorBattery1
+		return settings.IconBattery100, colors.Battery1
 	case percentage >= 70 && percentage < 80:
-		return settings.IconBattery75, settings.ColorBattery2
+		return settings.IconBattery75, colors.Battery2
 	case percentage >= 40 && percentage < 70:
-		return settings.IconBattery50, settings.ColorBattery3
+		return settings.IconBattery50, colors.Battery3
 	case percentage >= 10 && percentage < 40:
-		return settings.IconBattery25, settings.ColorBattery4
+		return settings.IconBattery25, colors.Battery4
 	case percentage >= 0 && percentage < 10:
-		return settings.IconBattery0, settings.ColorBattery5
+		return settings.IconBattery0, colors.Battery5
 	default:
 		return "", "" // Handle invalid percentages
 	}
