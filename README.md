@@ -19,9 +19,7 @@ then use this .sketchybarrc to test
 ```shell
 #!/bin/bash
 
-FIFO=/tmp/wentsketchy
-
-"$HOME/bin/wentsketchy" start --fifo=$FIFO
+"$HOME/bin/wentsketchy" start
 ```
 
 and this in .aerospace.toml to test
@@ -46,10 +44,14 @@ aerospace items will emit specific events, such as `aerospace-workspace-change +
 
 
 ## TODO
+- how to get rid of echo commands not dieing
 - get aerospace mode (layout, tabbed, etc)
 - get aerospace fullscreen
+- when workspace collapsed, show number of windows
 - wifi item
-- cpu & fan item
+- wifi https://github.com/FelixKratz/SketchyBar/discussions/12#discussioncomment-8908932
+- vpn https://github.com/FelixKratz/SketchyBar/discussions/12#discussioncomment-1216869
+- down & up speeds https://github.com/FelixKratz/SketchyBar/discussions/12#discussioncomment-8107907
 
 # # Known limitations
 
@@ -58,3 +60,5 @@ aerospace items will emit specific events, such as `aerospace-workspace-change +
 - highlight single window
   we have a front-app event from sketchybar, but no front-window events from anyone
   we can get the focused window, but no event to react to
+- click on window
+  we cannot select a window from aeropsace

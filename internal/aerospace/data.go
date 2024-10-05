@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/zmwangx/debounce"
+	"golang.org/x/sync/singleflight"
 )
 
 type Aerospace interface {
@@ -20,13 +20,14 @@ type Aerospace interface {
 	GetFocusedApp() string
 	SetFocusedApp(app string)
 
-	RefreshTree()
+	SingleFlightRefreshTree()
 
 	FocusedMonitor(ctx context.Context) (MonitorID, error)
 	WindowsOfWorkspace(workspaceID string) []*Window
 	WindowsOfFocusedWorkspace(ctx context.Context) (IndexedWindows, error)
 	WindowsOfFocusedMonitor(ctx context.Context) (IndexedWindows, error)
 	FocusedWindow(ctx context.Context) (WindowID, error)
+	AllFullWindows(ctx context.Context) (IndexedFullWindows, error)
 }
 
 type Data struct {
@@ -41,7 +42,7 @@ type Data struct {
 	focusedApp         string
 	tree               *Tree
 
-	debouncedRefreshTree func()
+	refreshTree *singleflight.Group
 }
 
 func New(
@@ -49,19 +50,23 @@ func New(
 	api API,
 	treeBuilder TreeBuilder,
 ) *Data {
-	instance := &Data{
+	var g singleflight.Group
+	return &Data{
 		logger:      logger,
 		api:         api,
 		treeBuilder: treeBuilder,
+		refreshTree: &g,
 	}
-
-	instance.createDebouncedRefreshTree()
-
-	return instance
 }
 
-func (data *Data) RefreshTree() {
-	data.debouncedRefreshTree()
+func (data *Data) SingleFlightRefreshTree() {
+	data.logger.Info("aerospace: refreshing..")
+	_, err, shared := data.refreshTree.Do("refresh-aerospace-tree", data.refreshAerospaceData)
+	data.logger.Info("aerospace: refreshed", slog.Bool("shared", shared))
+
+	if err != nil {
+		data.logger.Error("aerospace: error while refreshing tree", slog.Any("err", err))
+	}
 }
 
 func (data *Data) GetTree() *Tree {
@@ -157,6 +162,16 @@ func (data *Data) WindowsOfFocusedMonitor(ctx context.Context) (IndexedWindows, 
 	return indexWindows(windows), nil
 }
 
+func (data *Data) AllFullWindows(ctx context.Context) (IndexedFullWindows, error) {
+	windows, err := data.api.FullWindows(ctx)
+
+	if err != nil {
+		return make(IndexedFullWindows, 0), fmt.Errorf("aerospace: could not get all windows. %w", err)
+	}
+
+	return indexFullWindows(windows), nil
+}
+
 func (data *Data) WindowsOfWorkspace(workspaceID string) []*Window {
 	workspace, found := data.tree.IndexedWorkspaces[workspaceID]
 	if !found {
@@ -187,29 +202,21 @@ func (data *Data) FocusedWindow(ctx context.Context) (WindowID, error) {
 	return windowID, nil
 }
 
-func (data *Data) createDebouncedRefreshTree() {
-	refreshAerospaceData := func() {
-		ctx := context.Background()
+func (data *Data) refreshAerospaceData() (interface{}, error) {
+	ctx := context.Background()
 
-		start := time.Now()
-		defer func() {
-			elapsed := time.Since(start)
-			data.logger.Info("aerospace: refresh took", slog.Duration("elapsed", elapsed))
-		}()
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+		data.logger.Info("aerospace: refresh took", slog.Duration("elapsed", elapsed))
+	}()
 
-		data.logger.Info("aerospace: refreshing..")
-		tree, err := data.treeBuilder.Build(ctx)
+	tree, err := data.treeBuilder.Build(ctx)
 
-		if err != nil {
-			data.logger.Error("aerospace: could not refres tree")
-			return
-		}
-
-		data.tree = tree
-		data.logger.Info("aerospace: refreshed")
+	if err != nil {
+		return false, fmt.Errorf("aerospace: could not refresh tree. %w", err)
 	}
 
-	debouncedRefreshTree, _ := debounce.Debounce(refreshAerospaceData, 0, debounce.WithLeading(true))
-
-	data.debouncedRefreshTree = debouncedRefreshTree
+	data.tree = tree
+	return true, nil
 }

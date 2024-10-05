@@ -3,8 +3,8 @@ package sketchybar
 import "fmt"
 
 type PaddingOptions struct {
-	Left  int
-	Right int
+	Left  *int
+	Right *int
 }
 
 type ColorOptions struct {
@@ -13,7 +13,7 @@ type ColorOptions struct {
 }
 
 type BorderOptions struct {
-	Width int
+	Width *int
 	Color string
 }
 
@@ -33,11 +33,11 @@ func (opts FontOptions) String() string {
 func (opts PaddingOptions) ToArgs(parent *string) []string {
 	args := []string{}
 
-	if opts.Right != 0 {
-		args = withParent(args, parent, "padding_right=%d", opts.Right)
+	if opts.Right != nil {
+		args = withParent(args, parent, "padding_right=%d", *opts.Right)
 	}
-	if opts.Left != 0 {
-		args = withParent(args, parent, "padding_left=%d", opts.Left)
+	if opts.Left != nil {
+		args = withParent(args, parent, "padding_left=%d", *opts.Left)
 	}
 
 	return args
@@ -60,8 +60,8 @@ func (opts ColorOptions) ToArgs(parent *string) []string {
 func (opts BorderOptions) ToArgs(parent *string) []string {
 	args := []string{}
 
-	if opts.Width != 0 {
-		args = withParent(args, parent, "border_width=%d", opts.Width)
+	if opts.Width != nil {
+		args = withParent(args, parent, "border_width=%d", *opts.Width)
 	}
 	if opts.Color != "" {
 		args = withParent(args, parent, "border_color=%s", opts.Color)

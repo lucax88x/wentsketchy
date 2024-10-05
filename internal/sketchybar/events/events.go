@@ -2,6 +2,8 @@ package events
 
 // https://felixkratz.github.io/SketchyBar/config/events
 const (
+	Forced              string = "forced"
+	Routine             string = "routine"
 	FrontAppSwitched    string = "front_app_switched"
 	SpaceWindowsChange  string = "space_windows_change"
 	SpaceChange         string = "space_change"

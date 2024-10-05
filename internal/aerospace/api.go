@@ -19,9 +19,10 @@ type WindowID = int
 type API interface {
 	Monitors(ctx context.Context) ([]MonitorID, error)
 	FocusedMonitor(ctx context.Context) (MonitorID, error)
-	WorkspacesOfMonitor(ctx context.Context, monitorID int) ([]WorkspaceID, error)
+	FullWorkspaces(ctx context.Context) ([]*FullWorkspace, error)
+	WorkspacesOfMonitor(ctx context.Context, monitorID MonitorID) ([]WorkspaceID, error)
 	FocusedWorkspace(ctx context.Context) (WorkspaceID, error)
-	WindowsOfWorkspace(ctx context.Context, workspaceID string) ([]*Window, error)
+	WindowsOfWorkspace(ctx context.Context, workspaceID WorkspaceID) ([]*Window, error)
 	WindowsOfMonitor(ctx context.Context, monitorID string) ([]*Window, error)
 	FullWindows(ctx context.Context) ([]*FullWindow, error)
 	FocusedWorkspaceWindows(ctx context.Context) ([]*Window, error)
@@ -84,6 +85,25 @@ func (api realAPI) FocusedMonitor(ctx context.Context) (MonitorID, error) {
 	return monitors[0], nil
 }
 
+func (api realAPI) FullWorkspaces(ctx context.Context) ([]*FullWorkspace, error) {
+	output, err := api.command.Run(
+		ctx,
+		"aerospace",
+		"list-workspaces",
+		"--monitor",
+		"all",
+		"--format",
+		fullWorkspaceOutputFormat(),
+	)
+
+	if err != nil {
+		return make([]*FullWorkspace, 0), fmt.Errorf("aerospace: could not get workspaces. %w", err)
+	}
+
+	return splitAndMapFullWorkspaces(output)
+
+}
+
 func (api realAPI) WorkspacesOfMonitor(ctx context.Context, monitorID int) ([]WorkspaceID, error) {
 	output, err := api.command.Run(
 		ctx,
@@ -129,7 +149,7 @@ func (api realAPI) FocusedWorkspace(ctx context.Context) (WorkspaceID, error) {
 	return workspaces[0], nil
 }
 
-func (api realAPI) WindowsOfWorkspace(ctx context.Context, workspaceID string) ([]*Window, error) {
+func (api realAPI) WindowsOfWorkspace(ctx context.Context, workspaceID WorkspaceID) ([]*Window, error) {
 	output, err := api.command.Run(
 		ctx,
 		"aerospace",
@@ -192,6 +212,7 @@ func (api realAPI) FullWindows(ctx context.Context) ([]*FullWindow, error) {
 
 	return splitAndMapFullWindows(output)
 }
+
 func (api realAPI) FocusedWorkspaceWindows(ctx context.Context) ([]*Window, error) {
 	return api.WindowsOfWorkspace(ctx, "focused")
 }
@@ -319,5 +340,20 @@ func splitAndMapMonitors(output string) ([]MonitorID, error) {
 func splitAndMapWorkspaces(output string) ([]WorkspaceID, error) {
 	return splitAndMap(output, func(splitted []string) (WorkspaceID, error) {
 		return utils.Sanitize(splitted[0]), nil
+	})
+}
+
+func splitAndMapFullWorkspaces(output string) ([]*FullWorkspace, error) {
+	return splitAndMap(output, func(splitted []string) (*FullWorkspace, error) {
+		monitorID, err := strconv.Atoi(utils.Sanitize(splitted[1]))
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &FullWorkspace{
+			ID:        utils.Sanitize(splitted[0]),
+			MonitorID: monitorID,
+		}, nil
 	})
 }

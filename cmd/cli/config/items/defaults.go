@@ -7,45 +7,49 @@ import (
 
 func Defaults(batches [][]string) ([][]string, error) {
 	defaults := sketchybar.ItemOptions{
-		YOffset: 0,
+		YOffset: pointer(0),
 		Padding: sketchybar.PaddingOptions{
-			Right: 0,
-			Left:  0,
+			Right: pointer(0),
+			Left:  pointer(0),
 		},
 		Icon: sketchybar.ItemIconOptions{
 			Color: sketchybar.ColorOptions{
-				Color: settings.SketchybarSettings.IconColor,
+				Color: settings.Sketchybar.IconColor,
 			},
 			Font: sketchybar.FontOptions{
-				Font: settings.SketchybarSettings.IconFont,
-				Kind: settings.SketchybarSettings.IconFontKind,
-				Size: settings.SketchybarSettings.IconFontSize,
+				Font: settings.Sketchybar.IconFont,
+				Kind: settings.Sketchybar.IconFontKind,
+				Size: settings.Sketchybar.IconFontSize,
 			},
 		},
 		Label: sketchybar.ItemLabelOptions{
 			Color: sketchybar.ColorOptions{
-				Color: settings.SketchybarSettings.LabelColor,
+				Color: settings.Sketchybar.LabelColor,
 			},
 			Font: sketchybar.FontOptions{
-				Font: settings.SketchybarSettings.LabelFont,
-				Kind: settings.SketchybarSettings.LabelFontKind,
-				Size: settings.SketchybarSettings.LabelFontSize,
+				Font: settings.Sketchybar.LabelFont,
+				Kind: settings.Sketchybar.LabelFontKind,
+				Size: settings.Sketchybar.LabelFontSize,
 			},
 			Padding: sketchybar.PaddingOptions{
-				Right: 0,
-				Left:  0,
+				Right: pointer(0),
+				Left:  pointer(0),
 			},
 		},
 		Background: sketchybar.BackgroundOptions{
 			Drawing:      "on",
-			Height:       settings.SketchybarSettings.ItemHeight,
-			CornerRadius: 0,
+			Height:       settings.Sketchybar.ItemHeight,
+			CornerRadius: settings.Sketchybar.ItemRadius,
 			Color: sketchybar.ColorOptions{
-				Color: settings.SketchybarSettings.ItemBackgroundColor,
+				Color: settings.Sketchybar.ItemBackgroundColor,
+			},
+			Border: sketchybar.BorderOptions{
+				Color: settings.Sketchybar.ItemBorderColor,
+				Width: pointer(2),
 			},
 			Padding: sketchybar.PaddingOptions{
-				Right: 0,
-				Left:  0,
+				Right: pointer(0),
+				Left:  pointer(0),
 			},
 		},
 		Updates:     "off",

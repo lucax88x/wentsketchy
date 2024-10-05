@@ -4,14 +4,14 @@ type BarOptions struct {
 	Padding       PaddingOptions
 	Color         ColorOptions
 	Border        BorderOptions
-	Height        int
+	Height        *int
 	Shadow        string
 	FontSmoothing string
 	Background    BackgroundOptions
 	Position      string
 	Sticky        string
-	YOffset       int
-	Margin        int
+	YOffset       *int
+	Margin        *int
 	Topmost       string
 }
 
@@ -22,8 +22,8 @@ func (opts BarOptions) ToArgs() []string {
 	args = append(args, opts.Color.ToArgs(nil)...)
 	args = append(args, opts.Border.ToArgs(nil)...)
 
-	if opts.Height != 0 {
-		args = with(args, "height=%d", opts.Height)
+	if opts.Height != nil {
+		args = with(args, "height=%d", *opts.Height)
 	}
 	if opts.Shadow != "" {
 		args = with(args, "shadow=%s", opts.Shadow)
@@ -37,11 +37,11 @@ func (opts BarOptions) ToArgs() []string {
 	if opts.FontSmoothing != "" {
 		args = with(args, "font_smoothing=%s", opts.FontSmoothing)
 	}
-	if opts.YOffset != 0 {
-		args = with(args, "y_offset=%d", opts.YOffset)
+	if opts.YOffset != nil {
+		args = with(args, "y_offset=%d", *opts.YOffset)
 	}
-	if opts.Margin != 0 {
-		args = with(args, "margin=%d", opts.Margin)
+	if opts.Margin != nil {
+		args = with(args, "margin=%d", *opts.Margin)
 	}
 	if opts.Topmost != "" {
 		args = with(args, "topmost=%s", opts.Topmost)

@@ -25,6 +25,12 @@ func NewTreeBuilder(logger *slog.Logger, api API) TreeBuilder {
 }
 
 func (t realTreeBuilder) Build(ctx context.Context) (*Tree, error) {
+	fullWorkspaces, err := t.api.FullWorkspaces(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	fullWindows, err := t.api.FullWindows(ctx)
 
 	if err != nil {
@@ -35,6 +41,30 @@ func (t realTreeBuilder) Build(ctx context.Context) (*Tree, error) {
 	indexedWorkspaces := make(IndexedWorkspaces, 0)
 	indexedWindows := make(IndexedWindows, 0)
 
+	for _, fullWorkspace := range fullWorkspaces {
+		_, foundWorkspace := indexedWorkspaces[fullWorkspace.ID]
+		if !foundWorkspace {
+			indexedWorkspaces[fullWorkspace.ID] = &WorkspaceWithWindowIDs{
+				fullWorkspace.ID,
+				make([]WindowID, 0),
+			}
+		}
+
+		monitor, foundMonitor := indexedMonitors[fullWorkspace.MonitorID]
+		if !foundMonitor {
+			monitor = &MonitorWithWorkspaceIDs{
+				fullWorkspace.MonitorID,
+				make([]WorkspaceID, 0),
+			}
+
+			indexedMonitors[fullWorkspace.MonitorID] = monitor
+		}
+
+		if !containsString(monitor.Workspaces, fullWorkspace.ID) {
+			monitor.Workspaces = append(monitor.Workspaces, fullWorkspace.ID)
+		}
+	}
+
 	for _, fullWindow := range fullWindows {
 		indexedWindows[fullWindow.ID] = &Window{
 			ID:  fullWindow.ID,
@@ -43,30 +73,17 @@ func (t realTreeBuilder) Build(ctx context.Context) (*Tree, error) {
 
 		workspace, foundWorkspace := indexedWorkspaces[fullWindow.WorkspaceID]
 		if !foundWorkspace {
-			workspace = &WorkspaceWithWindowIDs{
-				fullWindow.WorkspaceID,
-				make([]WindowID, 0),
-			}
-
-			indexedWorkspaces[fullWindow.WorkspaceID] = workspace
+			t.logger.ErrorContext(
+				ctx,
+				"could not find workspace",
+				slog.String("workspace", fullWindow.WorkspaceID),
+				slog.Int("window", fullWindow.ID),
+			)
 		}
 
 		workspace.Windows = append(workspace.Windows, fullWindow.ID)
-
-		monitor, foundMonitor := indexedMonitors[fullWindow.MonitorID]
-		if !foundMonitor {
-			monitor = &MonitorWithWorkspaceIDs{
-				fullWindow.MonitorID,
-				make([]WorkspaceID, 0),
-			}
-
-			indexedMonitors[fullWindow.MonitorID] = monitor
-		}
-
-		if !containsString(monitor.Workspaces, fullWindow.WorkspaceID) {
-			monitor.Workspaces = append(monitor.Workspaces, fullWindow.WorkspaceID)
-		}
 	}
+
 	sortWorkspaces(indexedMonitors)
 
 	branches := make([]*Branch, 0)
@@ -117,6 +134,16 @@ func indexWindows(windows []*Window) IndexedWindows {
 	return indexedWindows
 }
 
+func indexFullWindows(windows []*FullWindow) IndexedFullWindows {
+	indexedFullWindows := make(IndexedFullWindows, len(windows))
+
+	for _, window := range windows {
+		indexedFullWindows[window.ID] = window
+	}
+
+	return indexedFullWindows
+}
+
 func sortWorkspaces(indexedMonitors IndexedMonitors) {
 	for _, monitor := range indexedMonitors {
 		sort.Slice(monitor.Workspaces, func(i, j int) bool {
@@ -131,6 +158,7 @@ func sortWorkspaces(indexedMonitors IndexedMonitors) {
 type IndexedMonitors = map[int]*MonitorWithWorkspaceIDs
 type IndexedWorkspaces = map[string]*WorkspaceWithWindowIDs
 type IndexedWindows = map[int]*Window
+type IndexedFullWindows = map[int]*FullWindow
 
 type Tree struct {
 	Monitors []*Branch

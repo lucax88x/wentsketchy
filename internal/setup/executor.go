@@ -1,4 +1,4 @@
-package executor
+package setup
 
 import (
 	"context"
@@ -6,11 +6,10 @@ import (
 
 	"github.com/lucax88x/wentsketchy/cmd/cli/commands"
 	"github.com/lucax88x/wentsketchy/cmd/cli/console"
-	"github.com/lucax88x/wentsketchy/internal/setup"
 	"github.com/spf13/viper"
 )
 
-func NewCliExecutor(viper *viper.Viper, console *console.Console) setup.ProgramExecutor {
+func NewCliExecutor(viper *viper.Viper, console *console.Console) ProgramExecutor {
 	return func(ctx context.Context, logger *slog.Logger) error {
 		rootCmd := commands.NewRootCmd(ctx, logger, viper, console)
 

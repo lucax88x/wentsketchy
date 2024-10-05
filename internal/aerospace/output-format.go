@@ -50,6 +50,16 @@ func fullWindowOutputFormat() string {
 	)
 }
 
+func fullWorkspaceOutputFormat() string {
+	return strings.Join(
+		[]string{
+			outputFormatWorkspace,
+			outputFormatSeparator,
+			outputFormatMonitorID,
+		}, "",
+	)
+}
+
 func workspaceOutputFormat() string {
 	return outputFormatWorkspace
 }

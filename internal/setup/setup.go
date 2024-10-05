@@ -34,7 +34,10 @@ type ExecutorBuilder func(
 func Run(buildExecutor ExecutorBuilder) ExecutionResult {
 	start := time.Now()
 
-	logger := slog.New(tint.NewHandler(os.Stderr, nil))
+	logger := slog.New(tint.NewHandler(
+		os.Stderr,
+		&tint.Options{Level: slog.LevelDebug},
+	))
 
 	defer func() {
 		elapsed := time.Since(start)

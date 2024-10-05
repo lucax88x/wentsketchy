@@ -48,24 +48,49 @@ func NewWentsketchy(
 }
 
 func initialize(ctx context.Context, di *Wentsketchy) error {
+	cfg, err := config.ReadYaml()
+
+	if err != nil {
+		//nolint:errorlint // no wrap
+		return fmt.Errorf("wentsketchy: could not initialize cfg from yaml. %v", err)
+	}
+
 	di.command = command.NewCommand(di.Logger)
 	di.aerospaceAPI = aerospace.NewAPI(di.Logger, di.command)
 	di.aerospaceTreeBuilder = aerospace.NewTreeBuilder(di.Logger, di.aerospaceAPI)
 	di.Aerospace = aerospace.New(di.Logger, di.aerospaceAPI, di.aerospaceTreeBuilder)
 
 	di.Sketchybar = sketchybar.NewAPI(di.Logger, di.command)
+
+	mainIcon := items.NewMainIconItem()
+	calendar := items.NewCalendarItem()
+	frontApp := items.NewFrontAppItem()
+	aerospace := items.NewAerospaceItem(di.Logger, di.Aerospace, di.Sketchybar)
+	battery := items.NewBatteryItem(di.Logger)
+	cpu := items.NewCPUItem(di.Logger, di.command)
+	sensors := items.NewSensorsItem(di.Logger, di.command)
+
 	di.Config = config.NewConfig(
+		cfg,
 		di.Logger,
 		di.Sketchybar,
+		map[string]items.WentsketchyItem{
+			"main_icon": mainIcon,
+			"calendar":  calendar,
+			"front_app": frontApp,
+			"aerospace": aerospace,
+			"battery":   battery,
+			"cpu":       cpu,
+			"sensors":   sensors,
+		},
 		items.WentsketchyItems{
-			MainIcon: items.NewMainIconItem(),
-			Aerospace: items.NewAerospaceItem(
-				di.Aerospace,
-				di.Sketchybar,
-			),
-			Calendar: items.NewCalendarItem(),
-			FrontApp: items.NewFrontAppItem(di.Aerospace),
-			Battery:  items.NewBatteryItem(di.Logger),
+			MainIcon:  mainIcon,
+			Calendar:  calendar,
+			FrontApp:  frontApp,
+			Aerospace: aerospace,
+			Battery:   battery,
+			CPU:       cpu,
+			Sensors:   sensors,
 		},
 	)
 

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
 	"github.com/lucax88x/wentsketchy/cmd/cli/console"
 	"github.com/lucax88x/wentsketchy/cmd/cli/runner"
 	"github.com/lucax88x/wentsketchy/internal/jobs"
@@ -19,44 +20,27 @@ import (
 	"github.com/spf13/viper"
 )
 
-type startOptions struct {
-	fifo string
-}
-
 func NewStartCmd(
 	ctx context.Context,
 	logger *slog.Logger,
 	viper *viper.Viper,
 	console *console.Console,
 ) *cobra.Command {
-	options := &startOptions{}
-
 	startCmd := &cobra.Command{
 		Use:   "start",
 		Short: "start wentsketchy",
 		RunE: func(_ *cobra.Command, args []string) error {
-			return runner.RunCmdE(ctx, logger, viper, console, args, runStartCmd(options))
+			return runner.RunCmdE(ctx, logger, viper, console, args, runStartCmd())
 		},
 	}
 
 	startCmd.SetOut(console.Stdout)
 	startCmd.SetErr(console.Stderr)
 
-	configureStartCmdFlags(viper, startCmd, options)
-
 	return startCmd
 }
 
-func configureStartCmdFlags(_ *viper.Viper, startCmd *cobra.Command, options *startOptions) {
-	startCmd.Flags().StringVar(
-		&options.fifo,
-		"fifo",
-		"/tmp/wentsketchy",
-		"Path to fifo file you want to pipe commands to",
-	)
-}
-
-func runStartCmd(options *startOptions) runner.RunE {
+func runStartCmd() runner.RunE {
 	return func(
 		ctx context.Context,
 		_ *console.Console,
@@ -66,12 +50,10 @@ func runStartCmd(options *startOptions) runner.RunE {
 		di.Logger.InfoContext(
 			ctx,
 			"start: starting fifo",
-			slog.String("path", options.fifo),
+			slog.String("path", settings.FifoPath),
 		)
 
-		di.Config.SetFifoPath(options.fifo)
-
-		err := di.Fifo.Start(options.fifo)
+		err := di.Fifo.Start(settings.FifoPath)
 
 		if err != nil {
 			return fmt.Errorf("start: could not start fifo %w", err)
@@ -79,7 +61,7 @@ func runStartCmd(options *startOptions) runner.RunE {
 
 		di.Logger.InfoContext(ctx, "start: refresh aerospace tree")
 
-		di.Aerospace.RefreshTree()
+		di.Aerospace.SingleFlightRefreshTree()
 
 		di.Logger.InfoContext(ctx, "start: config init")
 
@@ -94,7 +76,7 @@ func runStartCmd(options *startOptions) runner.RunE {
 
 		var aggregateError error
 		go func() {
-			runServer(ctx, di, options.fifo, &wg)
+			runServer(ctx, di, &wg)
 
 			if err != nil {
 				aggregateError = errors.Join(aggregateError, fmt.Errorf("server: error. %w", err))
@@ -124,7 +106,6 @@ func runStartCmd(options *startOptions) runner.RunE {
 func runServer(
 	ctx context.Context,
 	di *wentsketchy.Wentsketchy,
-	path string,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
@@ -137,7 +118,7 @@ func runServer(
 	cancelCtx, cancel := context.WithCancel(ctx)
 
 	go func(ctx context.Context) {
-		di.Server.Start(ctx, path)
+		di.Server.Start(ctx)
 	}(cancelCtx)
 
 	<-quit
@@ -162,6 +143,7 @@ func runJobs(
 	tickerCtx, tickerCancel := context.WithCancel(ctx)
 
 	go func(ctx context.Context) {
+		// di.Config.Cfg
 		jobs.RefreshAerospaceData(ctx, di, time.Minute)
 	}(tickerCtx)
 

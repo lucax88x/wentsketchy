@@ -2,10 +2,10 @@ package args
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/lucax88x/wentsketchy/cmd/cli/config/settings"
 	"github.com/lucax88x/wentsketchy/internal/fifo"
 )
 
@@ -49,11 +49,7 @@ func FromEvent(msg string) (*In, error) {
 	return args, nil
 }
 
-func BuildEvent(path string) (string, error) {
-	if path == "" {
-		return "", errors.New("args: path is empty")
-	}
-
+func BuildEvent() (string, error) {
 	data := &Out{
 		Name:     "$NAME",
 		Event:    "$SENDER",
@@ -69,10 +65,13 @@ func BuildEvent(path string) (string, error) {
 
 	serialized := strings.ReplaceAll(string(bytes), `"`, `\"`)
 
+	// TODO: ensure file exists, also in aerospace.toml
 	return fmt.Sprintf(
-		`echo "update args: %s info: $INFO %c" > %s`,
+		// `[[ -f %s ]] && echo "update args: %s info: $INFO %c" >> %s`,
+		`echo "update args: %s info: $INFO %c" >> %s`,
+		// settings.FifoPath,
 		serialized,
 		fifo.Separator,
-		path,
+		settings.FifoPath,
 	), nil
 }

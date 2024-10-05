@@ -1,7 +1,7 @@
-package settings
+package icons
 
 // https://github.com/kvndrsslr/sketchybar-app-font/releases
-var AppIcons = map[string]string{
+var App = map[string]string{
 	"Live":                             ":ableton:",
 	"Adobe Bridge":                     ":adobe_bridge:",
 	"Affinity Designer":                ":affinity_designer:",

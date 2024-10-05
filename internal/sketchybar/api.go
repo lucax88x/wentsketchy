@@ -54,6 +54,7 @@ func (api realAPI) QueryBar(ctx context.Context) (query.Bar, error) {
 
 func (api realAPI) run(ctx context.Context, arg ...string) (string, error) {
 	if len(arg) == 0 {
+		// api.logger.InfoContext(ctx, "sketchybar: no commands, skipping")
 		return "", nil
 	}
 

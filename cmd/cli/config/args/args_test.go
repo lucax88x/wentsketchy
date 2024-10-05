@@ -11,7 +11,7 @@ import (
 func TestUnitArgs(t *testing.T) {
 	t.Run("should build event correclty", func(t *testing.T) {
 		// WHEN
-		event, err := args.BuildEvent("/path")
+		event, err := args.BuildEvent()
 
 		// THEN
 		require.NoError(t, err)
