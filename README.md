@@ -3,7 +3,8 @@
 It provides a repo with building blocks for all the plugins to build complex setups.
 It supports handling between complex programs, such as aerospace, and yabai.
 
-![](./assets/demo.mp4)
+demo:
+https://github.com/user-attachments/assets/4a238f9f-dd4a-4e7b-9a6f-e458564acca7
 
 today, it supports:
 
