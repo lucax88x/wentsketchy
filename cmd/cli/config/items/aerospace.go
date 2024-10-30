@@ -210,6 +210,7 @@ func (item AerospaceItem) handleFrontAppSwitched(
 
 func (item AerospaceItem) workspaceToSketchybar(
 	isFocusedWorkspace bool,
+	monitorsCount int,
 	monitorID int,
 	workspaceID string,
 ) (*sketchybar.ItemOptions, error) {
@@ -226,7 +227,7 @@ func (item AerospaceItem) workspaceToSketchybar(
 	colors := item.getWorkspaceColors(isFocusedWorkspace)
 
 	return &sketchybar.ItemOptions{
-		Display: strconv.Itoa(monitorID),
+		Display: item.getSketchybarDisplayIndex(monitorsCount, monitorID),
 		Padding: sketchybar.PaddingOptions{
 			Left:  pointer(0),
 			Right: pointer(0),
@@ -514,6 +515,21 @@ func (item AerospaceItem) handleWorkspaceChange(
 	return batches
 }
 
+func (item AerospaceItem) getSketchybarDisplayIndex(
+	monitorCount int,
+	monitorID aerospace.MonitorID,
+) string {
+	result := monitorID + 1
+
+	// fmt.Printf("%d ==  %d\n", result, monitorCount)
+
+	if result >= monitorCount {
+		result = 1
+	}
+
+	return strconv.Itoa(result)
+}
+
 func (item AerospaceItem) handleDisplayChange(batches Batches) Batches {
 	tree := item.aerospace.GetTree()
 
@@ -522,7 +538,7 @@ func (item AerospaceItem) handleDisplayChange(batches Batches) Batches {
 			sketchybarWorkspaceID := getSketchybarWorkspaceID(workspace.Workspace)
 
 			workspaceItem := &sketchybar.ItemOptions{
-				Display: strconv.Itoa(monitor.Monitor),
+				Display: item.getSketchybarDisplayIndex(len(tree.Monitors), monitor.Monitor),
 			}
 
 			batches = batch(batches, m(s("--set", sketchybarWorkspaceID), workspaceItem.ToArgs()))
@@ -531,7 +547,7 @@ func (item AerospaceItem) handleDisplayChange(batches Batches) Batches {
 				sketchybarWindowID := getSketchybarWindowID(windowID)
 
 				windowItem := &sketchybar.ItemOptions{
-					Display: strconv.Itoa(monitor.Monitor),
+					Display: item.getSketchybarDisplayIndex(len(tree.Monitors), monitor.Monitor),
 				}
 
 				batches = batch(batches, m(s("--set", sketchybarWindowID), windowItem.ToArgs()))
@@ -649,6 +665,7 @@ func (item *AerospaceItem) applyTree(
 			sketchybarSpaceID := getSketchybarWorkspaceID(workspace.Workspace)
 			workspaceSpace, err := item.workspaceToSketchybar(
 				isFocusedWorkspace,
+				len(tree.Monitors),
 				monitor.Monitor,
 				workspace.Workspace,
 			)
